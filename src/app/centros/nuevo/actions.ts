@@ -49,6 +49,19 @@ function getOptionalUrl(formData: FormData, key: string): string | null {
   }
 }
 
+function getOptionalDate(formData: FormData, key: string): string | null {
+  const value = getOptionalString(formData, key);
+  if (!value) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`La fecha en ${key} no es válida.`);
+  }
+
+  return value;
+}
+
 export async function crearCentroAcopio(
   formData: FormData,
 ): Promise<CrearCentroResult> {
@@ -77,6 +90,23 @@ export async function crearCentroAcopio(
     const contacto = getOptionalString(formData, "contacto");
     const ubicacionUrl = getOptionalUrl(formData, "ubicacion_url");
     const estadoVialidad = getOptionalString(formData, "estado_vialidad");
+    const fechaInicioRecepcion = getOptionalDate(
+      formData,
+      "fecha_inicio_recepcion",
+    );
+    const fechaFinRecepcion = getOptionalDate(formData, "fecha_fin_recepcion");
+    const horarioRecepcion = getOptionalString(formData, "horario_recepcion");
+
+    if (
+      fechaInicioRecepcion &&
+      fechaFinRecepcion &&
+      fechaFinRecepcion < fechaInicioRecepcion
+    ) {
+      return {
+        ok: false,
+        message: "La fecha fin no puede ser anterior a la fecha inicio.",
+      };
+    }
 
     const codigoGestion = generateManagementCode();
     const codigoHash = hashManagementCode(codigoGestion);
@@ -105,6 +135,9 @@ export async function crearCentroAcopio(
         ubicacion_url: ubicacionUrl,
         telefono_contacto: contacto,
         detalle_vias: estadoVialidad,
+        fecha_inicio_recepcion: fechaInicioRecepcion,
+        fecha_fin_recepcion: fechaFinRecepcion,
+        horario_recepcion: horarioRecepcion,
         nombre_responsable: responsableNombre,
         telefono_responsable: responsableTelefono,
         codigo_gestion_hash: codigoHash,

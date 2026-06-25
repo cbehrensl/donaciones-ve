@@ -40,6 +40,9 @@ export interface CentroAcopio {
   ubicacion_url: string | null;
   contacto: string | null;
   estado_vialidad: string | null;
+  fecha_inicio_recepcion: string | null;
+  fecha_fin_recepcion: string | null;
+  horario_recepcion: string | null;
   responsable_nombre?: string | null;
   responsable_telefono?: string | null;
   verificado: boolean;
@@ -96,4 +99,19 @@ export interface HomeSearchFilters {
 export interface HomeSearchMeta {
   limit: number;
   reachedLimit: boolean;
+}
+
+export interface ModeracionSearchFilters {
+  q: string;
+  estatus: string;
+  verificacion: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface ModeracionSearchMeta {
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }

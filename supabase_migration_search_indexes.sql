@@ -19,3 +19,16 @@ create index if not exists idx_centros_telefono_contacto_trgm
   on public.centros_acopio
   using gin (telefono_contacto extensions.gin_trgm_ops)
   where telefono_contacto is not null;
+
+create index if not exists idx_centros_moderacion_filters
+  on public.centros_acopio (estatus, verificado, updated_at desc);
+
+create index if not exists idx_centros_nombre_responsable_trgm
+  on public.centros_acopio
+  using gin (nombre_responsable extensions.gin_trgm_ops)
+  where nombre_responsable is not null;
+
+create index if not exists idx_centros_telefono_responsable_trgm
+  on public.centros_acopio
+  using gin (telefono_responsable extensions.gin_trgm_ops)
+  where telefono_responsable is not null;

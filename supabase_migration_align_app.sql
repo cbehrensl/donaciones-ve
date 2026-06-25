@@ -4,7 +4,10 @@
 alter table public.centros_acopio
   add column if not exists ubicacion_url text,
   add column if not exists codigo_gestion_hash text,
-  add column if not exists telefono_responsable text;
+  add column if not exists telefono_responsable text,
+  add column if not exists fecha_inicio_recepcion date,
+  add column if not exists fecha_fin_recepcion date,
+  add column if not exists horario_recepcion text;
 
 create unique index if not exists idx_centros_codigo_gestion_hash
   on public.centros_acopio (codigo_gestion_hash)

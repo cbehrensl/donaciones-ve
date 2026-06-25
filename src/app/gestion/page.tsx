@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ActionFeedback } from "@/components/ActionFeedback";
 import { resolverCodigoGestion } from "@/app/gestion/actions";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -6,22 +7,10 @@ interface GestionLoginPageProps {
   searchParams: Promise<{ error?: string }>;
 }
 
-const ERROR_MESSAGES: Record<string, string> = {
-  "codigo-vacio": "Ingresa tu código de gestión.",
-  "codigo-invalido": "Código no válido. Verifica e intenta de nuevo.",
-  "supabase-no-configurado":
-    "Supabase no está configurado. No es posible acceder a centros reales.",
-  "supabase-service-no-configurado":
-    "Falta la variable SUPABASE_SERVICE_ROLE_KEY. Es necesaria para validar códigos de gestión.",
-};
-
 export default async function GestionLoginPage({
   searchParams,
 }: GestionLoginPageProps) {
   const params = await searchParams;
-  const errorMessage = params.error
-    ? ERROR_MESSAGES[params.error] ?? "Error al acceder."
-    : null;
 
   return (
     <div className="mx-auto min-h-screen max-w-lg px-4 py-8">
@@ -41,11 +30,7 @@ export default async function GestionLoginPage({
         </section>
       ) : null}
 
-      {errorMessage ? (
-        <section className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
-          {errorMessage}
-        </section>
-      ) : null}
+      <ActionFeedback error={params.error} />
 
       <form
         action={resolverCodigoGestion}

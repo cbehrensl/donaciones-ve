@@ -18,6 +18,10 @@ export function CentroCard({ centro }: CentroCardProps) {
   const semaforo: SemafaroEstado = calcularSemafaro(necesidades);
   const municipio = centro.municipios?.nombre ?? "Sin municipio";
   const plainText = formatCentroPlainText(centro);
+  const disponibilidadFechas =
+    centro.fecha_inicio_recepcion && centro.fecha_fin_recepcion
+      ? `${centro.fecha_inicio_recepcion} al ${centro.fecha_fin_recepcion}`
+      : centro.fecha_inicio_recepcion ?? centro.fecha_fin_recepcion;
 
   return (
     <article
@@ -87,6 +91,27 @@ export function CentroCard({ centro }: CentroCardProps) {
             <div className="flex flex-col">
               <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Estado de acceso</span>
               <span className="font-medium leading-snug text-zinc-700">{centro.estado_vialidad}</span>
+            </div>
+          </div>
+        )}
+
+        {(disponibilidadFechas || centro.horario_recepcion) && (
+          <div className="flex items-start gap-3 rounded-xl bg-white/40 p-3 ring-1 ring-zinc-900/5 sm:col-span-2">
+            <span aria-hidden className="text-lg">🕒</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                Horario de recepción
+              </span>
+              {disponibilidadFechas ? (
+                <span className="font-medium leading-snug text-zinc-700">
+                  Fechas: {disponibilidadFechas}
+                </span>
+              ) : null}
+              {centro.horario_recepcion ? (
+                <span className="font-medium leading-snug text-zinc-700">
+                  Horario: {centro.horario_recepcion}
+                </span>
+              ) : null}
             </div>
           </div>
         )}

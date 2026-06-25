@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ActionFeedback } from "@/components/ActionFeedback";
+import { ModeracionFormContext } from "@/components/ModeracionFormContext";
 import {
   getCategoriasInsumo,
   getCentrosParaModeracion,
@@ -36,6 +38,9 @@ interface ModeracionPageProps {
     q?: string;
     estatus?: string;
     verificacion?: string;
+    page?: string;
+    ok?: string;
+    error?: string;
   }>;
 }
 
@@ -70,23 +75,42 @@ function getEstatusClass(estatus?: string): string {
 export default async function ModeracionPage({
   searchParams,
 }: ModeracionPageProps) {
+  const PAGE_SIZE = 60;
   const params = await searchParams;
   const token = params.token?.trim() ?? "";
   const textoFiltro = params.q?.trim().toLowerCase() ?? "";
   const estatusFiltro = params.estatus ?? "todos";
   const verificacionFiltro = params.verificacion ?? "todos";
+  const page =
+    Number.isFinite(Number(params.page)) && Number(params.page) > 0
+      ? Math.floor(Number(params.page))
+      : 1;
   const hasToken = Boolean(getModeratorAccessToken());
   const hasSupabaseService = isSupabaseServiceConfigured();
   const isAuthorized = isModeratorTokenValid(token);
-  const [centros, resumen, categoriasInsumo] =
+  const [centrosResponse, resumen, categoriasInsumo] =
     isAuthorized && hasSupabaseService
       ? await Promise.all([
-          getCentrosParaModeracion(),
+          getCentrosParaModeracion({
+            q: textoFiltro,
+            estatus: estatusFiltro,
+            verificacion: verificacionFiltro,
+            page: page - 1,
+            pageSize: PAGE_SIZE,
+          }),
           getResumenModeracion(),
           getCategoriasInsumo(),
         ])
       : [
-          [],
+          {
+            centros: [],
+            meta: {
+              page: 0,
+              pageSize: PAGE_SIZE,
+              hasNextPage: false,
+              hasPrevPage: false,
+            },
+          },
           {
             total: 0,
             visibles: 0,
@@ -97,6 +121,8 @@ export default async function ModeracionPage({
           },
           [],
         ];
+  const centros = centrosResponse.centros;
+  const meta = centrosResponse.meta;
   const centrosVisibles = centros.filter((centro) => centro.estatus !== "cerrado");
   const centrosPendientes = centrosVisibles.filter((centro) => !centro.verificado);
   const centrosConNecesidades = centrosVisibles.filter(
@@ -140,44 +166,32 @@ export default async function ModeracionPage({
   )
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
-  const centrosFiltrados = centros.filter((centro) => {
-    if (textoFiltro) {
-      const searchable = [
-        centro.nombre,
-        centro.direccion,
-        centro.contacto,
-        centro.estado_vialidad,
-        centro.responsable_nombre,
-        centro.responsable_telefono,
-        centro.municipios?.nombre,
-        ...(centro.necesidades ?? []).flatMap((necesidad) => [
-          necesidad.tipo_insumo,
-          necesidad.detalle,
-        ]),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      if (!searchable.includes(textoFiltro)) {
-        return false;
-      }
-    }
-
-    if (estatusFiltro !== "todos" && centro.estatus !== estatusFiltro) {
-      return false;
-    }
-
-    if (verificacionFiltro === "pendientes" && centro.verificado) {
-      return false;
-    }
-
-    if (verificacionFiltro === "verificados" && !centro.verificado) {
-      return false;
-    }
-
-    return true;
-  });
+  const centrosFiltrados = centros;
+  const paginationParams = new URLSearchParams();
+  paginationParams.set("token", token);
+  if (textoFiltro) paginationParams.set("q", textoFiltro);
+  if (estatusFiltro && estatusFiltro !== "todos") {
+    paginationParams.set("estatus", estatusFiltro);
+  }
+  if (verificacionFiltro && verificacionFiltro !== "todos") {
+    paginationParams.set("verificacion", verificacionFiltro);
+  }
+  const prevHref = `/moderacion?${new URLSearchParams({
+    ...Object.fromEntries(paginationParams.entries()),
+    page: String(Math.max(1, page - 1)),
+  }).toString()}`;
+  const nextHref = `/moderacion?${new URLSearchParams({
+    ...Object.fromEntries(paginationParams.entries()),
+    page: String(page + 1),
+  }).toString()}`;
+  const clearHref = `/moderacion?${new URLSearchParams({ token }).toString()}`;
+  const formContext = {
+    token,
+    q: textoFiltro,
+    estatus: estatusFiltro,
+    verificacion: verificacionFiltro,
+    page,
+  };
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-6">
@@ -247,6 +261,8 @@ export default async function ModeracionPage({
         </section>
       ) : (
         <section className="space-y-6">
+          <ActionFeedback ok={params.ok} error={params.error} />
+
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
@@ -367,7 +383,7 @@ export default async function ModeracionPage({
               centros pendientes, revisar los <strong>{necesidadesUrgentes}</strong>{" "}
               insumos urgentes y completar información de los{" "}
               <strong>{centrosSinNecesidades}</strong> centros sin necesidades
-              reportadas.
+              reportadas en esta página de resultados.
             </p>
           </div>
 
@@ -376,6 +392,7 @@ export default async function ModeracionPage({
             className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
           >
             <input type="hidden" name="token" value={token} />
+            <input type="hidden" name="page" value="1" />
             <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-zinc-700">
               Filtrar centros
             </h2>
@@ -386,7 +403,7 @@ export default async function ModeracionPage({
                   name="q"
                   type="search"
                   defaultValue={params.q ?? ""}
-                  placeholder="Nombre, dirección, responsable, insumo..."
+                  placeholder="Nombre, dirección, responsable, horario..."
                   className="mt-1 w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2 text-base"
                 />
               </label>
@@ -428,10 +445,44 @@ export default async function ModeracionPage({
                 Aplicar
               </button>
             </div>
-            <p className="mt-3 text-sm text-zinc-600">
-              Mostrando <strong>{centrosFiltrados.length}</strong> de{" "}
-              <strong>{centros.length}</strong> centros.
-            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600">
+              <p>
+                Mostrando <strong>{centrosFiltrados.length}</strong> centros en la
+                página <strong>{page}</strong>.
+              </p>
+              <Link href={clearHref} className="text-sm font-bold text-zinc-700 underline">
+                Limpiar filtros
+              </Link>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <Link
+                href={prevHref}
+                aria-disabled={!meta.hasPrevPage}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-bold ${
+                  meta.hasPrevPage
+                    ? "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
+                    : "pointer-events-none border-zinc-200 bg-zinc-100 text-zinc-400"
+                }`}
+              >
+                ← Anterior
+              </Link>
+              <Link
+                href={nextHref}
+                aria-disabled={!meta.hasNextPage}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-bold ${
+                  meta.hasNextPage
+                    ? "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
+                    : "pointer-events-none border-zinc-200 bg-zinc-100 text-zinc-400"
+                }`}
+              >
+                Siguiente →
+              </Link>
+              {meta.hasNextPage ? (
+                <span className="text-xs text-zinc-500">
+                  Hay más resultados disponibles.
+                </span>
+              ) : null}
+            </div>
           </form>
 
           {centrosFiltrados.length === 0 ? (
@@ -481,6 +532,18 @@ export default async function ModeracionPage({
                         {centro.municipios?.nombre ?? "Sin municipio"} ·{" "}
                         {centro.direccion}
                       </p>
+                      {centro.fecha_inicio_recepcion ||
+                      centro.fecha_fin_recepcion ||
+                      centro.horario_recepcion ? (
+                        <p className="mt-1 text-xs font-semibold text-zinc-700">
+                          {centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion
+                            ? `Recepción: ${centro.fecha_inicio_recepcion ?? "..."} a ${centro.fecha_fin_recepcion ?? "..."}`
+                            : null}
+                          {centro.horario_recepcion
+                            ? `${centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion ? " · " : ""}Horario: ${centro.horario_recepcion}`
+                            : null}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium">
                       <span
@@ -500,7 +563,7 @@ export default async function ModeracionPage({
                         action={actualizarDetallesCentroModeracion}
                         className="grid gap-3 border-t border-zinc-200 p-3"
                       >
-                        <input type="hidden" name="token" value={token} />
+                        <ModeracionFormContext {...formContext} />
                         <input type="hidden" name="centroId" value={centro.id} />
                         <div className="grid gap-3 sm:grid-cols-2">
                           <label className="text-sm font-bold text-zinc-700">
@@ -550,6 +613,35 @@ export default async function ModeracionPage({
                         </label>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <label className="text-sm font-bold text-zinc-700">
+                            Fecha inicio de recepción
+                            <input
+                              name="fecha_inicio_recepcion"
+                              type="date"
+                              defaultValue={centro.fecha_inicio_recepcion ?? ""}
+                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                            />
+                          </label>
+                          <label className="text-sm font-bold text-zinc-700">
+                            Fecha fin de recepción
+                            <input
+                              name="fecha_fin_recepcion"
+                              type="date"
+                              defaultValue={centro.fecha_fin_recepcion ?? ""}
+                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                            />
+                          </label>
+                        </div>
+                        <label className="text-sm font-bold text-zinc-700">
+                          Horario de recepción
+                          <input
+                            name="horario_recepcion"
+                            defaultValue={centro.horario_recepcion ?? ""}
+                            placeholder="Ej. Lunes a sábado 8:00 a.m. a 5:00 p.m."
+                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="text-sm font-bold text-zinc-700">
                             Responsable
                             <input
                               name="responsable_nombre"
@@ -580,7 +672,7 @@ export default async function ModeracionPage({
                     {!estaOculto ? (
                       <>
                         <form action={actualizarVerificacion}>
-                          <input type="hidden" name="token" value={token} />
+                          <ModeracionFormContext {...formContext} />
                           <input type="hidden" name="centroId" value={centro.id} />
                           <input
                             type="hidden"
@@ -602,7 +694,7 @@ export default async function ModeracionPage({
                         </form>
 
                         <form action={ocultarCentro}>
-                          <input type="hidden" name="token" value={token} />
+                          <ModeracionFormContext {...formContext} />
                           <input type="hidden" name="centroId" value={centro.id} />
                           <button
                             type="submit"
@@ -614,7 +706,7 @@ export default async function ModeracionPage({
                       </>
                     ) : (
                       <form action={mostrarCentro}>
-                        <input type="hidden" name="token" value={token} />
+                        <ModeracionFormContext {...formContext} />
                         <input type="hidden" name="centroId" value={centro.id} />
                         <button
                           type="submit"
@@ -631,7 +723,7 @@ export default async function ModeracionPage({
                       action={agregarNecesidadModeracion}
                       className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3"
                     >
-                      <input type="hidden" name="token" value={token} />
+                      <ModeracionFormContext {...formContext} />
                       <input type="hidden" name="centroId" value={centro.id} />
                       <p className="mb-3 text-sm font-black uppercase tracking-wide text-blue-900">
                         Agregar insumo
@@ -692,7 +784,7 @@ export default async function ModeracionPage({
                             action={actualizarUrgencia}
                             className="flex flex-wrap items-center gap-2"
                           >
-                            <input type="hidden" name="token" value={token} />
+                            <ModeracionFormContext {...formContext} />
                             <input
                               type="hidden"
                               name="necesidadId"
@@ -719,7 +811,7 @@ export default async function ModeracionPage({
                             </button>
                           </form>
                           <form action={eliminarNecesidadModeracion}>
-                            <input type="hidden" name="token" value={token} />
+                            <ModeracionFormContext {...formContext} />
                             <input type="hidden" name="centroId" value={centro.id} />
                             <input
                               type="hidden"

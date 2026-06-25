@@ -13,6 +13,8 @@ import type {
   Estado,
   HomeSearchFilters,
   HomeSearchMeta,
+  ModeracionSearchFilters,
+  ModeracionSearchMeta,
   ModeracionResumen,
   Municipio,
   Necesidad,
@@ -129,7 +131,11 @@ function normalizeCategoriaInsumo(raw: Record<string, unknown>): CategoriaInsumo
 }
 
 function sanitizeSearchTerm(value: string): string {
-  return value.trim().replace(/[%,()]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+  return value
+    .trim()
+    .replace(/[%,'()]/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
 }
 
 export async function getEstados(): Promise<Estado[]> {
@@ -176,6 +182,15 @@ function normalizeCentro(raw: Record<string, unknown>): CentroAcopio {
       : raw.estado_vialidad
         ? String(raw.estado_vialidad)
         : null,
+    fecha_inicio_recepcion: raw.fecha_inicio_recepcion
+      ? String(raw.fecha_inicio_recepcion)
+      : null,
+    fecha_fin_recepcion: raw.fecha_fin_recepcion
+      ? String(raw.fecha_fin_recepcion)
+      : null,
+    horario_recepcion: raw.horario_recepcion
+      ? String(raw.horario_recepcion)
+      : null,
     responsable_nombre: raw.nombre_responsable
       ? String(raw.nombre_responsable)
       : raw.responsable_nombre
@@ -261,6 +276,9 @@ export async function getCentrosAcopio(
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
       estatus,
       verificado,
       updated_at,
@@ -359,6 +377,9 @@ export async function getHomeDataWithFilters(
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
       estatus,
       verificado,
       updated_at,
@@ -489,12 +510,17 @@ export async function getCategoriasInsumo(): Promise<CategoriaInsumo[]> {
   );
 }
 
-export async function getCentrosParaModeracion(): Promise<CentroAcopio[]> {
+export async function getCentrosParaModeracion(
+  filters: ModeracionSearchFilters,
+): Promise<{ centros: CentroAcopio[]; meta: ModeracionSearchMeta }> {
   const supabase = requireSupabaseServiceClient();
+  const searchTerm = sanitizeSearchTerm(filters.q);
+  const page = Math.max(0, filters.page);
+  const pageSize = Math.min(Math.max(20, filters.pageSize), 100);
+  const from = page * pageSize;
+  const to = from + pageSize;
 
-  const { data, error } = await supabase
-    .from("centros_acopio")
-    .select(
+  let query = supabase.from("centros_acopio").select(
       `
       id,
       nombre,
@@ -504,6 +530,9 @@ export async function getCentrosParaModeracion(): Promise<CentroAcopio[]> {
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
       nombre_responsable,
       telefono_responsable,
       estatus,
@@ -522,18 +551,48 @@ export async function getCentrosParaModeracion(): Promise<CentroAcopio[]> {
         categorias_insumo ( id, nombre )
       )
     `,
-    )
+    );
+
+  if (filters.estatus !== "todos") {
+    query = query.eq("estatus", filters.estatus);
+  }
+
+  if (filters.verificacion === "pendientes") {
+    query = query.eq("verificado", false);
+  }
+
+  if (filters.verificacion === "verificados") {
+    query = query.eq("verificado", true);
+  }
+
+  if (searchTerm) {
+    query = query.or(
+      `nombre.ilike.%${searchTerm}%,direccion.ilike.%${searchTerm}%,telefono_contacto.ilike.%${searchTerm}%,detalle_vias.ilike.%${searchTerm}%,nombre_responsable.ilike.%${searchTerm}%,telefono_responsable.ilike.%${searchTerm}%,horario_recepcion.ilike.%${searchTerm}%`,
+    );
+  }
+
+  const { data, error } = await query
     .order("verificado", { ascending: true })
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .range(from, to);
 
   if (error) {
     console.error("Error cargando centros para moderación:", error.message);
-    return [];
+    return {
+      centros: [],
+      meta: { page, pageSize, hasNextPage: false, hasPrevPage: page > 0 },
+    };
   }
 
-  return (data ?? []).map((row) =>
-    normalizeCentro(row as Record<string, unknown>),
-  );
+  const rows = data ?? [];
+  const hasNextPage = rows.length > pageSize;
+
+  return {
+    centros: rows
+      .slice(0, pageSize)
+      .map((row) => normalizeCentro(row as Record<string, unknown>)),
+    meta: { page, pageSize, hasNextPage, hasPrevPage: page > 0 },
+  };
 }
 
 export async function getResumenModeracion(): Promise<ModeracionResumen> {
@@ -596,6 +655,9 @@ export async function getCentroById(centroId: string): Promise<CentroAcopio | nu
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
       estatus,
       verificado,
       updated_at,
@@ -642,6 +704,9 @@ export async function getCentroByManagementCode(
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
       nombre_responsable,
       telefono_responsable,
       estatus,
@@ -694,6 +759,9 @@ export async function getCentroForManagement(
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
       nombre_responsable,
       telefono_responsable,
       codigo_gestion_hash,
@@ -729,6 +797,10 @@ export async function getCentroForManagement(
 export function formatCentroPlainText(centro: CentroAcopio): string {
   const municipio = centro.municipios?.nombre ?? "Sin municipio";
   const necesidades = centro.necesidades ?? [];
+  const disponibilidadFechas =
+    centro.fecha_inicio_recepcion && centro.fecha_fin_recepcion
+      ? `${centro.fecha_inicio_recepcion} a ${centro.fecha_fin_recepcion}`
+      : centro.fecha_inicio_recepcion ?? centro.fecha_fin_recepcion;
 
   const lineasNecesidades =
     necesidades.length > 0
@@ -746,6 +818,8 @@ export function formatCentroPlainText(centro: CentroAcopio): string {
     `Dirección: ${centro.direccion}`,
     centro.contacto ? `Contacto: ${centro.contacto}` : null,
     centro.ubicacion_url ? `Ubicación: ${centro.ubicacion_url}` : null,
+    disponibilidadFechas ? `Rango de fechas: ${disponibilidadFechas}` : null,
+    centro.horario_recepcion ? `Horario: ${centro.horario_recepcion}` : null,
     centro.estado_vialidad ? `Vialidad: ${centro.estado_vialidad}` : null,
     `Verificado: ${centro.verificado ? "Sí" : "Pendiente"}`,
     "NECESIDADES:",

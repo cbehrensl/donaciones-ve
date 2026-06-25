@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirectModeracion } from "@/lib/action-feedback";
 import { mapUrgenciaToDb } from "@/lib/data";
 import { isModeratorTokenValid } from "@/lib/moderacion-auth";
 import { requireSupabaseServiceClient } from "@/lib/supabase";
 import type { Urgencia } from "@/lib/types";
 
-function isAuthorized(token: FormDataEntryValue | null): boolean {
-  return isModeratorTokenValid(token);
+function isAuthorized(formData: FormData): boolean {
+  return isModeratorTokenValid(formData.get("token"));
 }
 
 function parseOptionalUrl(value: FormDataEntryValue | null): string | null {
@@ -26,11 +27,24 @@ function parseOptionalUrl(value: FormDataEntryValue | null): string | null {
   }
 }
 
+function parseOptionalDate(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
 export async function actualizarDetallesCentroModeracion(
   formData: FormData,
 ): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const centroId = String(formData.get("centroId") ?? "");
@@ -39,13 +53,27 @@ export async function actualizarDetallesCentroModeracion(
   const contacto = String(formData.get("contacto") ?? "").trim() || null;
   const vialidad = String(formData.get("vialidad") ?? "").trim() || null;
   const ubicacionUrl = parseOptionalUrl(formData.get("ubicacion_url"));
+  const fechaInicioRecepcion = parseOptionalDate(
+    formData.get("fecha_inicio_recepcion"),
+  );
+  const fechaFinRecepcion = parseOptionalDate(formData.get("fecha_fin_recepcion"));
+  const horarioRecepcion =
+    String(formData.get("horario_recepcion") ?? "").trim() || null;
   const responsableNombre =
     String(formData.get("responsable_nombre") ?? "").trim() || null;
   const responsableTelefono =
     String(formData.get("responsable_telefono") ?? "").trim() || null;
 
   if (!centroId || !nombre || !direccion) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
+  }
+
+  if (
+    fechaInicioRecepcion &&
+    fechaFinRecepcion &&
+    fechaFinRecepcion < fechaInicioRecepcion
+  ) {
+    redirectModeracion(formData, { error: "fechas-invalidas" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -57,6 +85,9 @@ export async function actualizarDetallesCentroModeracion(
       telefono_contacto: contacto,
       detalle_vias: vialidad,
       ubicacion_url: ubicacionUrl,
+      fecha_inicio_recepcion: fechaInicioRecepcion,
+      fecha_fin_recepcion: fechaFinRecepcion,
+      horario_recepcion: horarioRecepcion,
       nombre_responsable: responsableNombre,
       telefono_responsable: responsableTelefono,
     })
@@ -64,23 +95,24 @@ export async function actualizarDetallesCentroModeracion(
 
   if (error) {
     console.error("Error actualizando detalles desde moderación:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, { ok: "centro-actualizado" });
 }
 
 export async function actualizarVerificacion(formData: FormData): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const centroId = String(formData.get("centroId") ?? "");
   const verificado = formData.get("verificado") === "true";
 
   if (!centroId) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -95,23 +127,26 @@ export async function actualizarVerificacion(formData: FormData): Promise<void> 
 
   if (error) {
     console.error("Error actualizando centro:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, {
+    ok: verificado ? "centro-aprobado" : "centro-pendiente",
+  });
 }
 
 export async function actualizarUrgencia(formData: FormData): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const necesidadId = String(formData.get("necesidadId") ?? "");
   const urgencia = String(formData.get("urgencia") ?? "") as Urgencia;
 
   if (!necesidadId || !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -122,23 +157,24 @@ export async function actualizarUrgencia(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error actualizando urgencia:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, { ok: "insumo-actualizado" });
 }
 
 export async function eliminarNecesidadModeracion(formData: FormData): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const centroId = String(formData.get("centroId") ?? "");
   const necesidadId = String(formData.get("necesidadId") ?? "");
 
   if (!centroId || !necesidadId) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -150,16 +186,17 @@ export async function eliminarNecesidadModeracion(formData: FormData): Promise<v
 
   if (error) {
     console.error("Error eliminando necesidad desde moderación:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, { ok: "insumo-eliminado" });
 }
 
 export async function agregarNecesidadModeracion(formData: FormData): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const centroId = String(formData.get("centroId") ?? "");
@@ -172,7 +209,7 @@ export async function agregarNecesidadModeracion(formData: FormData): Promise<vo
     !categoriaId ||
     !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)
   ) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -189,22 +226,23 @@ export async function agregarNecesidadModeracion(formData: FormData): Promise<vo
 
   if (error) {
     console.error("Error agregando necesidad desde moderación:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, { ok: "insumo-agregado" });
 }
 
 export async function ocultarCentro(formData: FormData): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const centroId = String(formData.get("centroId") ?? "");
 
   if (!centroId) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -218,22 +256,23 @@ export async function ocultarCentro(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error ocultando centro:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, { ok: "centro-oculto" });
 }
 
 export async function mostrarCentro(formData: FormData): Promise<void> {
-  if (!isAuthorized(formData.get("token"))) {
-    return;
+  if (!isAuthorized(formData)) {
+    redirectModeracion(formData, { error: "no-autorizado" });
   }
 
   const centroId = String(formData.get("centroId") ?? "");
 
   if (!centroId) {
-    return;
+    redirectModeracion(formData, { error: "datos-invalidos" });
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -245,7 +284,7 @@ export async function mostrarCentro(formData: FormData): Promise<void> {
 
   if (selectError || !centro) {
     console.error("Error leyendo centro oculto:", selectError?.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   const verificado = Boolean(centro.verificado);
@@ -259,9 +298,10 @@ export async function mostrarCentro(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error mostrando centro:", error.message);
-    return;
+    redirectModeracion(formData, { error: "error-guardar" });
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
+  redirectModeracion(formData, { ok: "centro-visible" });
 }

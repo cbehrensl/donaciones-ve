@@ -6,6 +6,7 @@ import {
   agregarNecesidad,
   eliminarNecesidad,
 } from "@/app/gestion/[centroId]/actions";
+import { ActionFeedback } from "@/components/ActionFeedback";
 import { getCentroForManagement } from "@/lib/data";
 import { URGENCIA_STYLES } from "@/lib/semaforo";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -31,7 +32,7 @@ const TIPOS_INSUMO: TipoInsumo[] = [
 
 interface GestionCentroPageProps {
   params: Promise<{ centroId: string }>;
-  searchParams: Promise<{ codigo?: string }>;
+  searchParams: Promise<{ codigo?: string; ok?: string; error?: string }>;
 }
 
 async function loadCentro(
@@ -50,7 +51,7 @@ export default async function GestionCentroPage({
   searchParams,
 }: GestionCentroPageProps) {
   const { centroId } = await params;
-  const { codigo: codigoRaw } = await searchParams;
+  const { codigo: codigoRaw, ok, error } = await searchParams;
   const codigo = codigoRaw?.trim() ?? "";
 
   if (!codigo) {
@@ -81,6 +82,16 @@ export default async function GestionCentroPage({
         <p className="mt-1 text-sm text-zinc-600">
           {centro.municipios?.nombre} · {centro.direccion}
         </p>
+        {centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion || centro.horario_recepcion ? (
+          <p className="mt-2 text-sm font-semibold text-zinc-700">
+            {centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion
+              ? `Recepción: ${centro.fecha_inicio_recepcion ?? "..." } a ${centro.fecha_fin_recepcion ?? "..."}`
+              : null}
+            {centro.horario_recepcion
+              ? `${centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion ? " · " : ""}Horario: ${centro.horario_recepcion}`
+              : null}
+          </p>
+        ) : null}
         {centro.ubicacion_url ? (
           <a
             href={centro.ubicacion_url}
@@ -97,6 +108,8 @@ export default async function GestionCentroPage({
           </p>
         ) : null}
       </header>
+
+      <ActionFeedback ok={ok} error={error} />
 
       <section className="mb-8">
         <h2 className="mb-4 text-lg font-bold">Detalles del centro</h2>
@@ -144,6 +157,53 @@ export default async function GestionCentroPage({
                 inputMode="url"
                 defaultValue={centro.ubicacion_url ?? ""}
                 placeholder="https://maps.google.com/..."
+                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="fecha_inicio_recepcion"
+                  className="mb-1.5 block text-sm font-bold"
+                >
+                  Fecha inicio de recepción
+                </label>
+                <input
+                  id="fecha_inicio_recepcion"
+                  name="fecha_inicio_recepcion"
+                  type="date"
+                  defaultValue={centro.fecha_inicio_recepcion ?? ""}
+                  className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="fecha_fin_recepcion"
+                  className="mb-1.5 block text-sm font-bold"
+                >
+                  Fecha fin de recepción
+                </label>
+                <input
+                  id="fecha_fin_recepcion"
+                  name="fecha_fin_recepcion"
+                  type="date"
+                  defaultValue={centro.fecha_fin_recepcion ?? ""}
+                  className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+                />
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="horario_recepcion"
+                className="mb-1.5 block text-sm font-bold"
+              >
+                Horario de recepción
+              </label>
+              <input
+                id="horario_recepcion"
+                name="horario_recepcion"
+                defaultValue={centro.horario_recepcion ?? ""}
+                placeholder="Ej. Lunes a sábado 8:00 a.m. a 5:00 p.m."
                 className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
               />
             </div>

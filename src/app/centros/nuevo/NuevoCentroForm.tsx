@@ -253,6 +253,52 @@ export function NuevoCentroForm({
               className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
             />
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="fecha_inicio_recepcion"
+                className="mb-1.5 block text-sm font-bold"
+              >
+                Fecha inicio de recepción (opcional)
+              </label>
+              <input
+                id="fecha_inicio_recepcion"
+                name="fecha_inicio_recepcion"
+                type="date"
+                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="fecha_fin_recepcion"
+                className="mb-1.5 block text-sm font-bold"
+              >
+                Fecha fin de recepción (opcional)
+              </label>
+              <input
+                id="fecha_fin_recepcion"
+                name="fecha_fin_recepcion"
+                type="date"
+                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="horario_recepcion"
+              className="mb-1.5 block text-sm font-bold"
+            >
+              Horario de recepción (opcional)
+            </label>
+            <input
+              id="horario_recepcion"
+              name="horario_recepcion"
+              placeholder="Ej. Lun a Sáb de 8:00 a.m. a 5:00 p.m."
+              className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+            />
+          </div>
         </fieldset>
 
         <fieldset className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
