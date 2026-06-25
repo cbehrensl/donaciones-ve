@@ -5,12 +5,19 @@ import { useMemo, useState } from "react";
 import { CentroCard } from "@/components/CentroCard";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
-import type { CentroAcopio, DataLoadError, Estado, Municipio } from "@/lib/types";
+import type {
+  CentroAcopio,
+  ContactoEmergencia,
+  DataLoadError,
+  Estado,
+  Municipio,
+} from "@/lib/types";
 
 interface HomeClientProps {
   estados: Estado[];
   municipios: Municipio[];
   centros: CentroAcopio[];
+  contactosEmergencia: ContactoEmergencia[];
   errors: DataLoadError[];
 }
 
@@ -18,6 +25,7 @@ export function HomeClient({
   estados,
   municipios,
   centros,
+  contactosEmergencia,
   errors,
 }: HomeClientProps) {
   const [estadoId, setEstadoId] = useState("");
@@ -27,6 +35,11 @@ export function HomeClient({
       targetId: "tour-actions",
       title: "Acciones principales",
       body: "Registra un centro, administra uno existente con su código o entra al panel de moderación si tienes clave.",
+    },
+    {
+      targetId: "tour-emergency-contacts",
+      title: "Contactos de emergencia",
+      body: "Ten a mano teléfonos clave para llamar rápido si necesitas seguridad, salud, bomberos o protección civil.",
     },
     {
       targetId: "tour-filters",
@@ -80,6 +93,15 @@ export function HomeClient({
   } else if (estadoNombre) {
     textoResultados = ` en ${estadoNombre}`;
   }
+
+  const telefonosHref = (telefono: string) =>
+    `tel:${telefono.replace(/[^\d+]/g, "")}`;
+  const whatsappHref = (telefono: string) =>
+    `https://wa.me/${telefono.replace(/[^\d]/g, "")}`;
+  const categoriaLabel = (categoria: string) =>
+    categoria
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-4 py-8">
@@ -138,6 +160,75 @@ export function HomeClient({
           </ul>
         </section>
       ) : null}
+
+      <details
+        id="tour-emergency-contacts"
+        className="mb-8 rounded-2xl border border-red-100 bg-white shadow-sm"
+      >
+        <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-red-700">
+              Información útil
+            </p>
+            <h2 className="mt-1 text-lg font-black text-zinc-900">
+              Contactos de emergencia
+            </h2>
+          </div>
+          <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-800">
+            Ver {contactosEmergencia.length} contactos
+          </span>
+        </summary>
+
+        {contactosEmergencia.length === 0 ? (
+          <p className="mx-4 mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:mx-5">
+            No hay contactos de emergencia disponibles en Supabase por ahora.
+          </p>
+        ) : (
+          <div className="grid gap-3 border-t border-red-50 p-4 sm:grid-cols-2 sm:p-5">
+            {contactosEmergencia.map((contacto) => (
+              <article
+                key={contacto.id}
+                className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <h3 className="font-black leading-tight text-zinc-900">
+                    {contacto.nombre}
+                  </h3>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-zinc-600">
+                    {categoriaLabel(contacto.categoria)}
+                  </span>
+                </div>
+
+                <p className="mb-3 text-xs font-semibold text-zinc-500">
+                  {contacto.zona ?? contacto.estado_nombre ?? "Cobertura general"}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {contacto.telefonos.map((telefono) => (
+                    <a
+                      key={`${contacto.id}-${telefono}`}
+                      href={telefonosHref(telefono)}
+                      className="cta-primary rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white"
+                    >
+                      Llamar {telefono}
+                    </a>
+                  ))}
+                  {contacto.whatsapp ? (
+                    <a
+                      href={whatsappHref(contacto.whatsapp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cta-secondary rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800"
+                    >
+                      WhatsApp
+                    </a>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </details>
 
       <div id="tour-filters" className="-mx-4 mb-8 bg-zinc-50 px-4 py-4 sm:mx-0 sm:rounded-2xl sm:border sm:border-zinc-200 sm:bg-white sm:p-6 sm:shadow-xl sm:shadow-zinc-200/50">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500 sm:text-xs">

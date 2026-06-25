@@ -42,6 +42,20 @@ export interface CentroAcopio {
   necesidades?: Necesidad[];
 }
 
+export interface ContactoEmergencia {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  categoria: string;
+  telefonos: string[];
+  whatsapp: string | null;
+  zona: string | null;
+  estado_id: string | null;
+  estado_nombre: string | null;
+  disponible_24h: boolean;
+  es_gratuito: boolean;
+}
+
 /** Datos privados del responsable; solo accesibles vía service role. */
 export interface CentroAcopioPrivado extends CentroAcopio {
   responsable_nombre: string;

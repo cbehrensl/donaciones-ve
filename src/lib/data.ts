@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase";
 import type {
   CentroAcopio,
+  ContactoEmergencia,
   DataLoadError,
   CentroAcopioPrivado,
   Estado,
@@ -80,6 +81,41 @@ function normalizeMunicipio(raw: Record<string, unknown>): Municipio {
         ? normalizeEstado(estadoRaw as Record<string, unknown>)
         : null,
   };
+}
+
+function normalizeContactoEmergencia(
+  raw: Record<string, unknown>,
+): ContactoEmergencia {
+  const estadosRaw = raw.estados;
+  const estado = Array.isArray(estadosRaw) ? estadosRaw[0] : estadosRaw;
+
+  return {
+    id: String(raw.id),
+    nombre: String(raw.nombre),
+    descripcion: raw.descripcion ? String(raw.descripcion) : null,
+    categoria: String(raw.categoria),
+    telefonos: Array.isArray(raw.telefonos)
+      ? raw.telefonos.map((telefono) => String(telefono))
+      : [],
+    whatsapp: raw.whatsapp ? String(raw.whatsapp) : null,
+    zona: raw.zona ? String(raw.zona) : null,
+    estado_id: raw.estado_id ? String(raw.estado_id) : null,
+    estado_nombre:
+      estado && typeof estado === "object" && "nombre" in estado
+        ? String((estado as Record<string, unknown>).nombre)
+        : null,
+    disponible_24h: Boolean(raw.disponible_24h),
+    es_gratuito: Boolean(raw.es_gratuito),
+  };
+}
+
+export function formatTelefonoHref(telefono: string): string {
+  return `tel:${telefono.replace(/[^\d+]/g, "")}`;
+}
+
+export function formatWhatsappHref(telefono: string): string {
+  const normalized = telefono.replace(/[^\d]/g, "");
+  return `https://wa.me/${normalized}`;
 }
 
 export async function getEstados(): Promise<Estado[]> {
@@ -248,6 +284,7 @@ export async function getHomeData(): Promise<{
   estados: Estado[];
   municipios: Municipio[];
   centros: CentroAcopio[];
+  contactosEmergencia: ContactoEmergencia[];
   errors: DataLoadError[];
 }> {
   const errors: DataLoadError[] = [];
@@ -258,6 +295,7 @@ export async function getHomeData(): Promise<{
       estados: [],
       municipios: [],
       centros: [],
+      contactosEmergencia: [],
       errors: [
         {
           scope: "Configuración",
@@ -268,7 +306,8 @@ export async function getHomeData(): Promise<{
     };
   }
 
-  const [estadosResult, municipiosResult, centrosResult] = await Promise.all([
+  const [estadosResult, municipiosResult, centrosResult, contactosResult] =
+    await Promise.all([
     supabase.from("estados").select("id, nombre").order("nombre"),
     supabase.from("municipios").select("id, nombre, estado_id").order("nombre"),
     supabase
@@ -303,6 +342,26 @@ export async function getHomeData(): Promise<{
       .in("estatus", ["activo", "saturado", "sin_verificar"])
       .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
       .order("nombre"),
+    supabase
+      .from("contactos_emergencia")
+      .select(
+        `
+        id,
+        nombre,
+        descripcion,
+        categoria,
+        telefonos,
+        whatsapp,
+        zona,
+        estado_id,
+        disponible_24h,
+        es_gratuito,
+        estados ( id, nombre )
+      `,
+      )
+      .eq("activo", true)
+      .order("categoria")
+      .order("nombre"),
   ]);
 
   if (estadosResult.error) {
@@ -326,6 +385,13 @@ export async function getHomeData(): Promise<{
     });
   }
 
+  if (contactosResult.error) {
+    errors.push({
+      scope: "Contactos de emergencia",
+      message: `No se pudieron cargar los contactos de emergencia: ${contactosResult.error.message}`,
+    });
+  }
+
   return {
     estados: (estadosResult.data ?? []).map((row) =>
       normalizeEstado(row as Record<string, unknown>),
@@ -335,6 +401,9 @@ export async function getHomeData(): Promise<{
     ),
     centros: (centrosResult.data ?? []).map((row) =>
       normalizeCentro(row as Record<string, unknown>),
+    ),
+    contactosEmergencia: (contactosResult.data ?? []).map((row) =>
+      normalizeContactoEmergencia(row as Record<string, unknown>),
     ),
     errors,
   };
