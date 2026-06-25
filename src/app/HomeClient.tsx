@@ -44,8 +44,8 @@ export function HomeClient({
     },
     {
       targetId: "tour-emergency-contacts",
-      title: "Contactos de emergencia",
-      body: "Ten a mano teléfonos clave para llamar rápido si necesitas seguridad, salud, bomberos o protección civil.",
+      title: "Información útil",
+      body: "Aquí verás teléfonos de emergencia y enlaces para reportar o buscar personas desaparecidas en plataformas solidarias.",
     },
     {
       targetId: "tour-filters",
@@ -163,7 +163,7 @@ export function HomeClient({
               Contactos de emergencia
             </h2>
             <p className="mt-2 text-sm font-semibold leading-relaxed text-blue-950">
-              Para reportar o buscar personas desaparecidas, visita{" "}
+              Para reportar o buscar personas desaparecidas, visita:{" "}
               <a
                 href="https://venezuelatebusca.com/"
                 target="_blank"
@@ -172,6 +172,26 @@ export function HomeClient({
                 onClick={(event) => event.stopPropagation()}
               >
                 Venezuela Te Busca
+              </a>
+              ,{" "}
+              <a
+                href="https://venezuelareporta.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-black text-blue-900 underline"
+                onClick={(event) => event.stopPropagation()}
+              >
+                Venezuela Reporta
+              </a>{" "}
+              o{" "}
+              <a
+                href="https://desaparecidosterremotovenezuela.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-black text-blue-900 underline"
+                onClick={(event) => event.stopPropagation()}
+              >
+                Desaparecidos Terremoto Venezuela
               </a>
               .
             </p>
@@ -314,8 +334,19 @@ export function HomeClient({
         )}
       </section>
 
-      <footer id="tour-share" className="mt-8 border-t border-zinc-200 pt-4 text-xs text-zinc-500">
-        Comparte centros por SMS/WhatsApp con el botón de copiar en cada tarjeta.
+      <footer
+        id="tour-share"
+        className="mt-8 space-y-2 border-t border-zinc-200 pt-4 text-xs leading-relaxed text-zinc-500"
+      >
+        <p>
+          Comparte centros por SMS/WhatsApp con el botón de copiar en cada
+          tarjeta.
+        </p>
+        <p>
+          La información mostrada es suministrada por usuarios de la aplicación.
+          Verifica los datos directamente con cada centro antes de movilizar
+          donaciones o tomar decisiones críticas.
+        </p>
       </footer>
       <SpotlightTour steps={tourSteps} />
     </div>
