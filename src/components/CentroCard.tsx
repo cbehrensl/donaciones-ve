@@ -114,8 +114,9 @@ export function CentroCard({ centro }: CentroCardProps) {
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-center text-sm font-medium text-zinc-400 italic">
-            No hay necesidades reportadas en este momento.
+          <div className="rounded-xl border border-dashed border-emerald-300 bg-emerald-50 p-4 text-center text-sm font-bold text-emerald-900">
+            Aún no se reportaron insumos específicos. Cualquier donación o
+            apoyo será bien recibido por este centro.
           </div>
         )}
       </div>

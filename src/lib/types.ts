@@ -26,6 +26,11 @@ export interface Necesidad {
   updated_at: string;
 }
 
+export interface CategoriaInsumo {
+  id: string;
+  nombre: string;
+}
+
 export interface CentroAcopio {
   id: string;
   nombre: string;
@@ -35,6 +40,8 @@ export interface CentroAcopio {
   ubicacion_url: string | null;
   contacto: string | null;
   estado_vialidad: string | null;
+  responsable_nombre?: string | null;
+  responsable_telefono?: string | null;
   verificado: boolean;
   activo: boolean;
   updated_at: string;
@@ -78,4 +85,15 @@ export interface ModeracionResumen {
 export interface DataLoadError {
   scope: string;
   message: string;
+}
+
+export interface HomeSearchFilters {
+  q: string;
+  estadoId: string;
+  municipioId: string;
+}
+
+export interface HomeSearchMeta {
+  limit: number;
+  reachedLimit: boolean;
 }

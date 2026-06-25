@@ -5,6 +5,8 @@ interface FiltroGeograficoProps {
   municipios: Municipio[];
   estadoId: string;
   municipioId: string;
+  estadoName?: string;
+  municipioName?: string;
   onEstadoChange: (estadoId: string) => void;
   onMunicipioChange: (municipioId: string) => void;
 }
@@ -14,6 +16,8 @@ export function FiltroGeografico({
   municipios,
   estadoId,
   municipioId,
+  estadoName,
+  municipioName,
   onEstadoChange,
   onMunicipioChange,
 }: FiltroGeograficoProps) {
@@ -34,6 +38,7 @@ export function FiltroGeografico({
         </label>
         <select
           id="filtro-estado"
+          name={estadoName}
           value={estadoId}
           onChange={(e) => onEstadoChange(e.target.value)}
           className="w-full appearance-none rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base font-medium text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-0"
@@ -59,6 +64,7 @@ export function FiltroGeografico({
         </label>
         <select
           id="filtro-municipio"
+          name={municipioName}
           value={municipioId}
           onChange={(e) => onMunicipioChange(e.target.value)}
           disabled={!estadoId}

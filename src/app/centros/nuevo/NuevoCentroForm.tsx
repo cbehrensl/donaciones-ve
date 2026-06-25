@@ -73,6 +73,10 @@ export function NuevoCentroForm({
             Tu centro aparecerá como <strong>pendiente de verificación</strong>{" "}
             hasta revisión de moderadores.
           </p>
+          <p>
+            Si todavía no agregas insumos específicos, la tarjeta pública dirá
+            que <strong>cualquier donación o apoyo será bien recibido</strong>.
+          </p>
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">

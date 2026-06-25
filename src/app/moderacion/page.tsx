@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { getCentrosParaModeracion, getResumenModeracion } from "@/lib/data";
+import {
+  getCategoriasInsumo,
+  getCentrosParaModeracion,
+  getResumenModeracion,
+} from "@/lib/data";
 import {
   getModeratorAccessToken,
   isModeratorTokenValid,
@@ -15,8 +19,11 @@ import {
 } from "@/lib/semaforo";
 import type { SemafaroEstado } from "@/lib/types";
 import {
+  agregarNecesidadModeracion,
+  actualizarDetallesCentroModeracion,
   actualizarUrgencia,
   actualizarVerificacion,
+  eliminarNecesidadModeracion,
   mostrarCentro,
   ocultarCentro,
 } from "@/app/moderacion/actions";
@@ -26,6 +33,7 @@ export const revalidate = 15;
 interface ModeracionPageProps {
   searchParams: Promise<{
     token?: string;
+    q?: string;
     estatus?: string;
     verificacion?: string;
   }>;
@@ -64,14 +72,19 @@ export default async function ModeracionPage({
 }: ModeracionPageProps) {
   const params = await searchParams;
   const token = params.token?.trim() ?? "";
+  const textoFiltro = params.q?.trim().toLowerCase() ?? "";
   const estatusFiltro = params.estatus ?? "todos";
   const verificacionFiltro = params.verificacion ?? "todos";
   const hasToken = Boolean(getModeratorAccessToken());
   const hasSupabaseService = isSupabaseServiceConfigured();
   const isAuthorized = isModeratorTokenValid(token);
-  const [centros, resumen] =
+  const [centros, resumen, categoriasInsumo] =
     isAuthorized && hasSupabaseService
-      ? await Promise.all([getCentrosParaModeracion(), getResumenModeracion()])
+      ? await Promise.all([
+          getCentrosParaModeracion(),
+          getResumenModeracion(),
+          getCategoriasInsumo(),
+        ])
       : [
           [],
           {
@@ -82,6 +95,7 @@ export default async function ModeracionPage({
             ocultos: 0,
             urgencias: 0,
           },
+          [],
         ];
   const centrosVisibles = centros.filter((centro) => centro.estatus !== "cerrado");
   const centrosPendientes = centrosVisibles.filter((centro) => !centro.verificado);
@@ -127,6 +141,29 @@ export default async function ModeracionPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
   const centrosFiltrados = centros.filter((centro) => {
+    if (textoFiltro) {
+      const searchable = [
+        centro.nombre,
+        centro.direccion,
+        centro.contacto,
+        centro.estado_vialidad,
+        centro.responsable_nombre,
+        centro.responsable_telefono,
+        centro.municipios?.nombre,
+        ...(centro.necesidades ?? []).flatMap((necesidad) => [
+          necesidad.tipo_insumo,
+          necesidad.detalle,
+        ]),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      if (!searchable.includes(textoFiltro)) {
+        return false;
+      }
+    }
+
     if (estatusFiltro !== "todos" && centro.estatus !== estatusFiltro) {
       return false;
     }
@@ -186,8 +223,7 @@ export default async function ModeracionPage({
             Acceso de moderador
           </h2>
           <p className="mb-5 text-sm leading-relaxed text-zinc-600">
-            Ingresa la clave configurada en <code>MODERADOR_ACCESS_TOKEN</code>{" "}
-            para entrar al dashboard.
+            Ingresa la clave para entrar al dashboard.
           </p>
           <form method="get" className="space-y-3">
             <label htmlFor="token" className="block text-sm font-bold">
@@ -343,7 +379,18 @@ export default async function ModeracionPage({
             <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-zinc-700">
               Filtrar centros
             </h2>
-            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+            <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr_1fr_auto]">
+              <label className="text-sm font-bold text-zinc-700">
+                Buscar
+                <input
+                  name="q"
+                  type="search"
+                  defaultValue={params.q ?? ""}
+                  placeholder="Nombre, dirección, responsable, insumo..."
+                  className="mt-1 w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2 text-base"
+                />
+              </label>
+
               <label className="text-sm font-bold text-zinc-700">
                 Estatus
                 <select
@@ -444,6 +491,91 @@ export default async function ModeracionPage({
                     </div>
                   </div>
 
+                  {!estaOculto ? (
+                    <details className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50">
+                      <summary className="cursor-pointer px-3 py-2 text-sm font-black uppercase tracking-wide text-zinc-700">
+                        Administrar datos del centro
+                      </summary>
+                      <form
+                        action={actualizarDetallesCentroModeracion}
+                        className="grid gap-3 border-t border-zinc-200 p-3"
+                      >
+                        <input type="hidden" name="token" value={token} />
+                        <input type="hidden" name="centroId" value={centro.id} />
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="text-sm font-bold text-zinc-700">
+                            Nombre
+                            <input
+                              name="nombre"
+                              defaultValue={centro.nombre}
+                              required
+                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                            />
+                          </label>
+                          <label className="text-sm font-bold text-zinc-700">
+                            Contacto público
+                            <input
+                              name="contacto"
+                              defaultValue={centro.contacto ?? ""}
+                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                            />
+                          </label>
+                        </div>
+                        <label className="text-sm font-bold text-zinc-700">
+                          Dirección
+                          <input
+                            name="direccion"
+                            defaultValue={centro.direccion}
+                            required
+                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <label className="text-sm font-bold text-zinc-700">
+                          Link de ubicación en Maps
+                          <input
+                            name="ubicacion_url"
+                            type="url"
+                            defaultValue={centro.ubicacion_url ?? ""}
+                            placeholder="https://maps.google.com/..."
+                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <label className="text-sm font-bold text-zinc-700">
+                          Estado de vialidad
+                          <input
+                            name="vialidad"
+                            defaultValue={centro.estado_vialidad ?? ""}
+                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="text-sm font-bold text-zinc-700">
+                            Responsable
+                            <input
+                              name="responsable_nombre"
+                              defaultValue={centro.responsable_nombre ?? ""}
+                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                            />
+                          </label>
+                          <label className="text-sm font-bold text-zinc-700">
+                            Tel. responsable
+                            <input
+                              name="responsable_telefono"
+                              defaultValue={centro.responsable_telefono ?? ""}
+                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                            />
+                          </label>
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-bold text-white sm:w-auto"
+                        >
+                          Guardar datos del centro
+                        </button>
+                      </form>
+                    </details>
+                  ) : null}
+
                   <div className="mb-4 flex flex-wrap gap-2">
                     {!estaOculto ? (
                       <>
@@ -494,6 +626,53 @@ export default async function ModeracionPage({
                     )}
                   </div>
 
+                  {!estaOculto ? (
+                    <form
+                      action={agregarNecesidadModeracion}
+                      className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3"
+                    >
+                      <input type="hidden" name="token" value={token} />
+                      <input type="hidden" name="centroId" value={centro.id} />
+                      <p className="mb-3 text-sm font-black uppercase tracking-wide text-blue-900">
+                        Agregar insumo
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                        <select
+                          name="categoriaId"
+                          className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold"
+                          required
+                        >
+                          <option value="">Selecciona insumo</option>
+                          {categoriasInsumo.map((categoria) => (
+                            <option key={categoria.id} value={categoria.id}>
+                              {categoria.nombre}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          name="urgencia"
+                          defaultValue="MEDIA"
+                          className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold"
+                        >
+                          <option value="URGENTE">Urgente</option>
+                          <option value="MEDIA">Media</option>
+                          <option value="SATURADO">Saturado</option>
+                        </select>
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-blue-800 px-3 py-2 text-sm font-bold text-white"
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                      <input
+                        name="detalle"
+                        placeholder="Detalle opcional: cantidad, presentación, prioridad..."
+                        className="mt-2 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm"
+                      />
+                    </form>
+                  ) : null}
+
                   {(centro.necesidades ?? []).length === 0 ? (
                     <p className="text-sm text-zinc-600">
                       Sin necesidades registradas.
@@ -537,6 +716,21 @@ export default async function ModeracionPage({
                               className="rounded bg-zinc-900 px-3 py-1 text-sm text-white"
                             >
                               Guardar
+                            </button>
+                          </form>
+                          <form action={eliminarNecesidadModeracion}>
+                            <input type="hidden" name="token" value={token} />
+                            <input type="hidden" name="centroId" value={centro.id} />
+                            <input
+                              type="hidden"
+                              name="necesidadId"
+                              value={necesidad.id}
+                            />
+                            <button
+                              type="submit"
+                              className="rounded border border-red-200 bg-red-50 px-3 py-1 text-sm font-bold text-red-800"
+                            >
+                              Quitar
                             </button>
                           </form>
                         </li>

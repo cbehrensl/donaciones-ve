@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { CentroCard } from "@/components/CentroCard";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
@@ -10,6 +10,8 @@ import type {
   ContactoEmergencia,
   DataLoadError,
   Estado,
+  HomeSearchFilters,
+  HomeSearchMeta,
   Municipio,
 } from "@/lib/types";
 
@@ -18,6 +20,8 @@ interface HomeClientProps {
   municipios: Municipio[];
   centros: CentroAcopio[];
   contactosEmergencia: ContactoEmergencia[];
+  initialFilters: HomeSearchFilters;
+  searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
 }
 
@@ -26,10 +30,12 @@ export function HomeClient({
   municipios,
   centros,
   contactosEmergencia,
+  initialFilters,
+  searchMeta,
   errors,
 }: HomeClientProps) {
-  const [estadoId, setEstadoId] = useState("");
-  const [municipioId, setMunicipioId] = useState("");
+  const [estadoId, setEstadoId] = useState(initialFilters.estadoId);
+  const [municipioId, setMunicipioId] = useState(initialFilters.municipioId);
   const tourSteps = [
     {
       targetId: "tour-actions",
@@ -62,23 +68,6 @@ export function HomeClient({
     setEstadoId(newEstadoId);
     setMunicipioId("");
   };
-
-  const centrosFiltrados = useMemo(() => {
-    return centros.filter((centro) => {
-      if (estadoId) {
-        const municipioDelCentro = municipios.find(
-          (m) => m.id === centro.municipio_id,
-        );
-        if (municipioDelCentro?.estado_id !== estadoId) {
-          return false;
-        }
-      }
-      if (municipioId && centro.municipio_id !== municipioId) {
-        return false;
-      }
-      return true;
-    });
-  }, [centros, estadoId, municipioId, municipios]);
 
   const municipioNombre = municipioId
     ? municipios.find((item) => item.id === municipioId)?.nombre
@@ -256,32 +245,70 @@ export function HomeClient({
             geográfica.
           </p>
         ) : null}
-        <FiltroGeografico
-          estados={estados}
-          municipios={municipios}
-          estadoId={estadoId}
-          municipioId={municipioId}
-          onEstadoChange={handleEstadoChange}
-          onMunicipioChange={setMunicipioId}
-        />
-        <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-4">
-          <p className="text-sm font-semibold text-zinc-900">
-            {centrosFiltrados.length}{" "}
-            <span className="font-medium text-zinc-500">
-              {centrosFiltrados.length === 1 ? "centro encontrado" : "centros encontrados"}
-              {textoResultados}
-            </span>
-          </p>
-        </div>
+        <form action="/" method="get">
+          <label
+            htmlFor="busqueda-centros"
+            className="mb-1.5 block text-sm font-bold uppercase tracking-wider text-zinc-800"
+          >
+            Buscar por texto
+          </label>
+          <input
+            id="busqueda-centros"
+            name="q"
+            type="search"
+            defaultValue={initialFilters.q}
+            placeholder="Nombre, dirección o teléfono"
+            className="mb-4 w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base font-medium text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none"
+          />
+          <FiltroGeografico
+            estados={estados}
+            municipios={municipios}
+            estadoId={estadoId}
+            municipioId={municipioId}
+            estadoName="estado"
+            municipioName="municipio"
+            onEstadoChange={handleEstadoChange}
+            onMunicipioChange={setMunicipioId}
+          />
+          <div className="mt-4 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-zinc-900">
+              {centros.length}{" "}
+              <span className="font-medium text-zinc-500">
+                {centros.length === 1 ? "centro encontrado" : "centros encontrados"}
+                {textoResultados}
+              </span>
+            </p>
+            <div className="flex gap-2">
+              <Link
+                href="/"
+                className="cta-secondary rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700"
+              >
+                Limpiar
+              </Link>
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-900"
+              >
+                Buscar
+              </button>
+            </div>
+          </div>
+          {searchMeta.reachedLimit ? (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              Hay más de {searchMeta.limit} resultados. Refina la búsqueda por
+              texto, estado o municipio para cargar menos datos.
+            </p>
+          ) : null}
+        </form>
       </div>
 
       <section id="tour-results" aria-live="polite" className="space-y-4">
-        {centrosFiltrados.length === 0 ? (
+        {centros.length === 0 ? (
           <p className="rounded border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
             No hay centros registrados en Supabase para esta ubicación.
           </p>
         ) : (
-          centrosFiltrados.map((centro) => (
+          centros.map((centro) => (
             <CentroCard key={centro.id} centro={centro} />
           ))
         )}

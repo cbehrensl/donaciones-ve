@@ -5,11 +5,14 @@ import {
   requireSupabaseServiceClient,
 } from "@/lib/supabase";
 import type {
+  CategoriaInsumo,
   CentroAcopio,
   ContactoEmergencia,
   DataLoadError,
   CentroAcopioPrivado,
   Estado,
+  HomeSearchFilters,
+  HomeSearchMeta,
   ModeracionResumen,
   Municipio,
   Necesidad,
@@ -118,6 +121,17 @@ export function formatWhatsappHref(telefono: string): string {
   return `https://wa.me/${normalized}`;
 }
 
+function normalizeCategoriaInsumo(raw: Record<string, unknown>): CategoriaInsumo {
+  return {
+    id: String(raw.id),
+    nombre: String(raw.nombre),
+  };
+}
+
+function sanitizeSearchTerm(value: string): string {
+  return value.trim().replace(/[%,()]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+}
+
 export async function getEstados(): Promise<Estado[]> {
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
 
@@ -161,6 +175,16 @@ function normalizeCentro(raw: Record<string, unknown>): CentroAcopio {
       ? String(raw.detalle_vias)
       : raw.estado_vialidad
         ? String(raw.estado_vialidad)
+        : null,
+    responsable_nombre: raw.nombre_responsable
+      ? String(raw.nombre_responsable)
+      : raw.responsable_nombre
+        ? String(raw.responsable_nombre)
+        : null,
+    responsable_telefono: raw.telefono_responsable
+      ? String(raw.telefono_responsable)
+      : raw.responsable_telefono
+        ? String(raw.responsable_telefono)
         : null,
     verificado: Boolean(raw.verificado),
     activo: estatus !== "cerrado" && raw.activo !== false,
@@ -285,10 +309,26 @@ export async function getHomeData(): Promise<{
   municipios: Municipio[];
   centros: CentroAcopio[];
   contactosEmergencia: ContactoEmergencia[];
+  searchMeta: HomeSearchMeta;
+  errors: DataLoadError[];
+}> {
+  return getHomeDataWithFilters({ q: "", estadoId: "", municipioId: "" });
+}
+
+export async function getHomeDataWithFilters(
+  filters: HomeSearchFilters,
+): Promise<{
+  estados: Estado[];
+  municipios: Municipio[];
+  centros: CentroAcopio[];
+  contactosEmergencia: ContactoEmergencia[];
+  searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
 }> {
   const errors: DataLoadError[] = [];
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+  const limit = 50;
+  const searchTerm = sanitizeSearchTerm(filters.q);
 
   if (!supabase) {
     return {
@@ -296,6 +336,7 @@ export async function getHomeData(): Promise<{
       municipios: [],
       centros: [],
       contactosEmergencia: [],
+      searchMeta: { limit, reachedLimit: false },
       errors: [
         {
           scope: "Configuración",
@@ -306,63 +347,80 @@ export async function getHomeData(): Promise<{
     };
   }
 
+  let centrosQuery = supabase
+    .from("centros_acopio")
+    .select(
+      `
+      id,
+      nombre,
+      direccion,
+      municipio_id,
+      estado_id,
+      ubicacion_url,
+      telefono_contacto,
+      detalle_vias,
+      estatus,
+      verificado,
+      updated_at,
+      municipios ( id, nombre, estado_id ),
+      necesidades (
+        id,
+        centro_id,
+        categoria_id,
+        nivel_urgencia,
+        cantidad_estimada,
+        descripcion,
+        ultima_actualizacion,
+        activo,
+        categorias_insumo ( id, nombre )
+      )
+    `,
+    )
+    .in("estatus", ["activo", "saturado", "sin_verificar"])
+    .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
+    .order("updated_at", { ascending: false })
+    .limit(limit + 1);
+
+  if (filters.estadoId) {
+    centrosQuery = centrosQuery.eq("estado_id", filters.estadoId);
+  }
+
+  if (filters.municipioId) {
+    centrosQuery = centrosQuery.eq("municipio_id", filters.municipioId);
+  }
+
+  if (searchTerm) {
+    centrosQuery = centrosQuery.or(
+      `nombre.ilike.%${searchTerm}%,direccion.ilike.%${searchTerm}%,telefono_contacto.ilike.%${searchTerm}%`,
+    );
+  }
+
   const [estadosResult, municipiosResult, centrosResult, contactosResult] =
     await Promise.all([
-    supabase.from("estados").select("id, nombre").order("nombre"),
-    supabase.from("municipios").select("id, nombre, estado_id").order("nombre"),
-    supabase
-      .from("centros_acopio")
-      .select(
-        `
-        id,
-        nombre,
-        direccion,
-        municipio_id,
-        estado_id,
-        ubicacion_url,
-        telefono_contacto,
-        detalle_vias,
-        estatus,
-        verificado,
-        updated_at,
-        municipios ( id, nombre, estado_id ),
-        necesidades (
+      supabase.from("estados").select("id, nombre").order("nombre"),
+      supabase.from("municipios").select("id, nombre, estado_id").order("nombre"),
+      centrosQuery,
+      supabase
+        .from("contactos_emergencia")
+        .select(
+          `
           id,
-          centro_id,
-          categoria_id,
-          nivel_urgencia,
-          cantidad_estimada,
+          nombre,
           descripcion,
-          ultima_actualizacion,
-          activo,
-          categorias_insumo ( id, nombre )
+          categoria,
+          telefonos,
+          whatsapp,
+          zona,
+          estado_id,
+          disponible_24h,
+          es_gratuito,
+          estados ( id, nombre )
+        `,
         )
-      `,
-      )
-      .in("estatus", ["activo", "saturado", "sin_verificar"])
-      .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
-      .order("nombre"),
-    supabase
-      .from("contactos_emergencia")
-      .select(
-        `
-        id,
-        nombre,
-        descripcion,
-        categoria,
-        telefonos,
-        whatsapp,
-        zona,
-        estado_id,
-        disponible_24h,
-        es_gratuito,
-        estados ( id, nombre )
-      `,
-      )
-      .eq("activo", true)
-      .order("categoria")
-      .order("nombre"),
-  ]);
+        .eq("activo", true)
+        .order("categoria")
+        .order("nombre"),
+    ]);
 
   if (estadosResult.error) {
     errors.push({
@@ -392,6 +450,9 @@ export async function getHomeData(): Promise<{
     });
   }
 
+  const centrosRows = centrosResult.data ?? [];
+  const reachedLimit = centrosRows.length > limit;
+
   return {
     estados: (estadosResult.data ?? []).map((row) =>
       normalizeEstado(row as Record<string, unknown>),
@@ -399,14 +460,33 @@ export async function getHomeData(): Promise<{
     municipios: (municipiosResult.data ?? []).map((row) =>
       normalizeMunicipio(row as Record<string, unknown>),
     ),
-    centros: (centrosResult.data ?? []).map((row) =>
+    centros: centrosRows.slice(0, limit).map((row) =>
       normalizeCentro(row as Record<string, unknown>),
     ),
     contactosEmergencia: (contactosResult.data ?? []).map((row) =>
       normalizeContactoEmergencia(row as Record<string, unknown>),
     ),
+    searchMeta: { limit, reachedLimit },
     errors,
   };
+}
+
+export async function getCategoriasInsumo(): Promise<CategoriaInsumo[]> {
+  const supabase = requireSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("categorias_insumo")
+    .select("id, nombre")
+    .eq("activo", true)
+    .order("nombre");
+
+  if (error) {
+    console.error("Error cargando categorías de insumo:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) =>
+    normalizeCategoriaInsumo(row as Record<string, unknown>),
+  );
 }
 
 export async function getCentrosParaModeracion(): Promise<CentroAcopio[]> {
@@ -424,6 +504,8 @@ export async function getCentrosParaModeracion(): Promise<CentroAcopio[]> {
       ubicacion_url,
       telefono_contacto,
       detalle_vias,
+      nombre_responsable,
+      telefono_responsable,
       estatus,
       verificado,
       updated_at,
@@ -656,7 +738,7 @@ export function formatCentroPlainText(centro: CentroAcopio): string {
               `- [${item.urgencia}] ${item.tipo_insumo}${item.detalle ? `: ${item.detalle}` : ""}`,
           )
           .join("\n")
-      : "- Sin necesidades reportadas";
+      : "- Sin insumos específicos reportados. Cualquier donación o apoyo será bien recibido.";
 
   return [
     `CENTRO: ${centro.nombre}`,

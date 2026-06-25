@@ -10,6 +10,67 @@ function isAuthorized(token: FormDataEntryValue | null): boolean {
   return isModeratorTokenValid(token);
 }
 
+function parseOptionalUrl(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export async function actualizarDetallesCentroModeracion(
+  formData: FormData,
+): Promise<void> {
+  if (!isAuthorized(formData.get("token"))) {
+    return;
+  }
+
+  const centroId = String(formData.get("centroId") ?? "");
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const direccion = String(formData.get("direccion") ?? "").trim();
+  const contacto = String(formData.get("contacto") ?? "").trim() || null;
+  const vialidad = String(formData.get("vialidad") ?? "").trim() || null;
+  const ubicacionUrl = parseOptionalUrl(formData.get("ubicacion_url"));
+  const responsableNombre =
+    String(formData.get("responsable_nombre") ?? "").trim() || null;
+  const responsableTelefono =
+    String(formData.get("responsable_telefono") ?? "").trim() || null;
+
+  if (!centroId || !nombre || !direccion) {
+    return;
+  }
+
+  const supabase = requireSupabaseServiceClient();
+  const { error } = await supabase
+    .from("centros_acopio")
+    .update({
+      nombre,
+      direccion,
+      telefono_contacto: contacto,
+      detalle_vias: vialidad,
+      ubicacion_url: ubicacionUrl,
+      nombre_responsable: responsableNombre,
+      telefono_responsable: responsableTelefono,
+    })
+    .eq("id", centroId);
+
+  if (error) {
+    console.error("Error actualizando detalles desde moderación:", error.message);
+    return;
+  }
+
+  revalidatePath("/");
+  revalidatePath("/moderacion");
+}
+
 export async function actualizarVerificacion(formData: FormData): Promise<void> {
   if (!isAuthorized(formData.get("token"))) {
     return;
@@ -61,6 +122,73 @@ export async function actualizarUrgencia(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error actualizando urgencia:", error.message);
+    return;
+  }
+
+  revalidatePath("/");
+  revalidatePath("/moderacion");
+}
+
+export async function eliminarNecesidadModeracion(formData: FormData): Promise<void> {
+  if (!isAuthorized(formData.get("token"))) {
+    return;
+  }
+
+  const centroId = String(formData.get("centroId") ?? "");
+  const necesidadId = String(formData.get("necesidadId") ?? "");
+
+  if (!centroId || !necesidadId) {
+    return;
+  }
+
+  const supabase = requireSupabaseServiceClient();
+  const { error } = await supabase
+    .from("necesidades")
+    .update({ activo: false })
+    .eq("id", necesidadId)
+    .eq("centro_id", centroId);
+
+  if (error) {
+    console.error("Error eliminando necesidad desde moderación:", error.message);
+    return;
+  }
+
+  revalidatePath("/");
+  revalidatePath("/moderacion");
+}
+
+export async function agregarNecesidadModeracion(formData: FormData): Promise<void> {
+  if (!isAuthorized(formData.get("token"))) {
+    return;
+  }
+
+  const centroId = String(formData.get("centroId") ?? "");
+  const categoriaId = String(formData.get("categoriaId") ?? "");
+  const urgencia = String(formData.get("urgencia") ?? "") as Urgencia;
+  const detalle = String(formData.get("detalle") ?? "").trim() || null;
+
+  if (
+    !centroId ||
+    !categoriaId ||
+    !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)
+  ) {
+    return;
+  }
+
+  const supabase = requireSupabaseServiceClient();
+  const { error } = await supabase.from("necesidades").upsert(
+    {
+      centro_id: centroId,
+      categoria_id: Number(categoriaId),
+      nivel_urgencia: mapUrgenciaToDb(urgencia),
+      descripcion: detalle,
+      activo: true,
+    },
+    { onConflict: "centro_id,categoria_id" },
+  );
+
+  if (error) {
+    console.error("Error agregando necesidad desde moderación:", error.message);
     return;
   }
 
