@@ -11,6 +11,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   "codigo-invalido": "Código no válido. Verifica e intenta de nuevo.",
   "supabase-no-configurado":
     "Supabase no está configurado. No es posible acceder a centros reales.",
+  "supabase-service-no-configurado":
+    "Falta la variable SUPABASE_SERVICE_ROLE_KEY. Es necesaria para validar códigos de gestión.",
 };
 
 export default async function GestionLoginPage({

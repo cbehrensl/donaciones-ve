@@ -2,7 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { getCentroByManagementCode } from "@/lib/data";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import {
+  isSupabaseConfigured,
+  isSupabaseServiceConfigured,
+} from "@/lib/supabase";
 
 export async function resolverCodigoGestion(formData: FormData): Promise<void> {
   const codigo = formData.get("codigo");
@@ -15,7 +18,14 @@ export async function resolverCodigoGestion(formData: FormData): Promise<void> {
     redirect("/gestion?error=supabase-no-configurado");
   }
 
-  const result = await getCentroByManagementCode(codigo);
+  if (!isSupabaseServiceConfigured()) {
+    redirect("/gestion?error=supabase-service-no-configurado");
+  }
+
+  const result = await getCentroByManagementCode(codigo).catch((error) => {
+    console.error("Error resolviendo código de gestión:", error);
+    return null;
+  });
 
   if (!result) {
     redirect("/gestion?error=codigo-invalido");

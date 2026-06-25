@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase";
 import type {
   CentroAcopio,
+  DataLoadError,
   CentroAcopioPrivado,
   Estado,
   ModeracionResumen,
@@ -241,6 +242,102 @@ export async function getCentrosAcopio(
   );
 
   return centros;
+}
+
+export async function getHomeData(): Promise<{
+  estados: Estado[];
+  municipios: Municipio[];
+  centros: CentroAcopio[];
+  errors: DataLoadError[];
+}> {
+  const errors: DataLoadError[] = [];
+  const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+
+  if (!supabase) {
+    return {
+      estados: [],
+      municipios: [],
+      centros: [],
+      errors: [
+        {
+          scope: "Configuración",
+          message:
+            "No se encontraron las variables de Supabase. Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel.",
+        },
+      ],
+    };
+  }
+
+  const [estadosResult, municipiosResult, centrosResult] = await Promise.all([
+    supabase.from("estados").select("id, nombre").order("nombre"),
+    supabase.from("municipios").select("id, nombre, estado_id").order("nombre"),
+    supabase
+      .from("centros_acopio")
+      .select(
+        `
+        id,
+        nombre,
+        direccion,
+        municipio_id,
+        estado_id,
+        ubicacion_url,
+        telefono_contacto,
+        detalle_vias,
+        estatus,
+        verificado,
+        updated_at,
+        municipios ( id, nombre, estado_id ),
+        necesidades (
+          id,
+          centro_id,
+          categoria_id,
+          nivel_urgencia,
+          cantidad_estimada,
+          descripcion,
+          ultima_actualizacion,
+          activo,
+          categorias_insumo ( id, nombre )
+        )
+      `,
+      )
+      .in("estatus", ["activo", "saturado", "sin_verificar"])
+      .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
+      .order("nombre"),
+  ]);
+
+  if (estadosResult.error) {
+    errors.push({
+      scope: "Estados",
+      message: `No se pudieron cargar los estados: ${estadosResult.error.message}`,
+    });
+  }
+
+  if (municipiosResult.error) {
+    errors.push({
+      scope: "Municipios",
+      message: `No se pudieron cargar los municipios: ${municipiosResult.error.message}`,
+    });
+  }
+
+  if (centrosResult.error) {
+    errors.push({
+      scope: "Centros",
+      message: `No se pudieron cargar los centros de acopio: ${centrosResult.error.message}`,
+    });
+  }
+
+  return {
+    estados: (estadosResult.data ?? []).map((row) =>
+      normalizeEstado(row as Record<string, unknown>),
+    ),
+    municipios: (municipiosResult.data ?? []).map((row) =>
+      normalizeMunicipio(row as Record<string, unknown>),
+    ),
+    centros: (centrosResult.data ?? []).map((row) =>
+      normalizeCentro(row as Record<string, unknown>),
+    ),
+    errors,
+  };
 }
 
 export async function getCentrosParaModeracion(): Promise<CentroAcopio[]> {

@@ -5,18 +5,20 @@ import { useMemo, useState } from "react";
 import { CentroCard } from "@/components/CentroCard";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
-import type { CentroAcopio, Estado, Municipio } from "@/lib/types";
+import type { CentroAcopio, DataLoadError, Estado, Municipio } from "@/lib/types";
 
 interface HomeClientProps {
   estados: Estado[];
   municipios: Municipio[];
   centros: CentroAcopio[];
+  errors: DataLoadError[];
 }
 
 export function HomeClient({
   estados,
   municipios,
   centros,
+  errors,
 }: HomeClientProps) {
   const [estadoId, setEstadoId] = useState("");
   const [municipioId, setMunicipioId] = useState("");
@@ -118,10 +120,36 @@ export function HomeClient({
         </div>
       </header>
 
+      {errors.length > 0 ? (
+        <section className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-950">
+          <h2 className="mb-2 text-base font-black">
+            No pudimos conectar completamente con Supabase
+          </h2>
+          <p className="mb-3 text-red-900">
+            Revisa las variables de entorno configuradas en Vercel y vuelve a
+            desplegar si acabas de agregarlas.
+          </p>
+          <ul className="space-y-1">
+            {errors.map((error) => (
+              <li key={`${error.scope}-${error.message}`}>
+                <strong>{error.scope}:</strong> {error.message}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div id="tour-filters" className="-mx-4 mb-8 bg-zinc-50 px-4 py-4 sm:mx-0 sm:rounded-2xl sm:border sm:border-zinc-200 sm:bg-white sm:p-6 sm:shadow-xl sm:shadow-zinc-200/50">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500 sm:text-xs">
           Buscar centros registrados
         </h2>
+        {errors.length === 0 && estados.length === 0 ? (
+          <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            No se recibieron estados desde Supabase. Verifica que la tabla tenga
+            datos y que las políticas de lectura permitan consultar la data
+            geográfica.
+          </p>
+        ) : null}
         <FiltroGeografico
           estados={estados}
           municipios={municipios}

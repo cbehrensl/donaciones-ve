@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Centros de Acopio | Caracas",
+  title: "Donaciones Venezuela",
   description:
     "Información en vivo sobre centros de acopio y necesidades de insumos tras la emergencia.",
   robots: "index, follow",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

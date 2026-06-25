@@ -60,3 +60,8 @@ export interface ModeracionResumen {
   ocultos: number;
   urgencias: number;
 }
+
+export interface DataLoadError {
+  scope: string;
+  message: string;
+}
