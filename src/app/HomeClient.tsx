@@ -166,13 +166,26 @@ export function HomeClient({
         className="mb-8 rounded-2xl border border-red-100 bg-white shadow-sm"
       >
         <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
-          <div>
+          <div className="max-w-2xl">
             <p className="text-xs font-black uppercase tracking-widest text-red-700">
               Información útil
             </p>
             <h2 className="mt-1 text-lg font-black text-zinc-900">
               Contactos de emergencia
             </h2>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-blue-950">
+              Para reportar o buscar personas desaparecidas, visita{" "}
+              <a
+                href="https://venezuelatebusca.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-black text-blue-900 underline"
+                onClick={(event) => event.stopPropagation()}
+              >
+                Venezuela Te Busca
+              </a>
+              .
+            </p>
           </div>
           <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-800">
             Ver {contactosEmergencia.length} contactos
@@ -184,7 +197,8 @@ export function HomeClient({
             No hay contactos de emergencia disponibles en Supabase por ahora.
           </p>
         ) : (
-          <div className="grid gap-3 border-t border-red-50 p-4 sm:grid-cols-2 sm:p-5">
+          <div className="border-t border-red-50 p-4 sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-2">
             {contactosEmergencia.map((contacto) => (
               <article
                 key={contacto.id}
@@ -226,6 +240,7 @@ export function HomeClient({
                 </div>
               </article>
             ))}
+            </div>
           </div>
         )}
       </details>
