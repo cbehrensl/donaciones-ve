@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NavBar } from "@/components/NavBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,12 +19,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-zinc-50 text-zinc-900 antialiased">
+      <body className="min-h-screen antialiased" style={{ background: "#EBF3FB", color: "#002858" }}>
+        {/* Top brand bar */}
         <div
-          className="fixed top-0 left-0 right-0 z-50 h-1 w-full bg-gradient-to-r from-[#F7D117] via-[#0033A0] to-[#CE1126]"
+          className="fixed top-0 left-0 right-0 z-50 h-1 w-full"
+          style={{ background: "#0084D0" }}
           aria-hidden="true"
         />
-        {children}
+        <NavBar />
+        <div className="pt-12">{children}</div>
       </body>
     </html>
   );

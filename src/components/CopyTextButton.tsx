@@ -24,15 +24,17 @@ export function CopyTextButton({
     }
   }
 
+  const style =
+    status === "copied"
+      ? { borderColor: "#0084D0", background: "#0084D0", color: "#fff" }
+      : { borderColor: "#bdd9f0", background: "#EBF3FB", color: "#002858" };
+
   return (
     <button
       type="button"
       onClick={handleCopy}
-      className={`w-full rounded-xl border-2 px-3 py-3 text-sm font-bold shadow-sm transition-all active:scale-[0.98] ${
-        status === "copied"
-          ? "border-green-600 bg-green-600 text-white"
-          : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
-      }`}
+      className="w-full rounded-xl border-2 px-3 py-3 text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
+      style={style}
     >
       {status === "copied"
         ? "✅ ¡Copiado!"

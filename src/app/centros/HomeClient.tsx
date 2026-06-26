@@ -255,7 +255,7 @@ export function HomeClient({
             geográfica.
           </p>
         ) : null}
-        <form action="/" method="get">
+        <form action="/centros" method="get">
           <label
             htmlFor="busqueda-centros"
             className="mb-1.5 block text-sm font-bold uppercase tracking-wider"
@@ -292,7 +292,7 @@ export function HomeClient({
             </p>
             <div className="flex gap-2">
               <Link
-                href="/"
+                href="/centros"
                 className="cta-secondary rounded-lg border px-4 py-2 text-sm font-bold"
                 style={{ borderColor: "#bdd9f0", color: "#002858", background: "#EBF3FB" }}
               >
@@ -332,7 +332,7 @@ export function HomeClient({
         <nav className="mt-6 flex items-center justify-between gap-4">
           {searchMeta.hasPrevPage ? (
             <Link
-              href={`/?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page - 1}`}
+              href={`/centros?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page - 1}`}
               className="rounded-lg border px-4 py-2 text-sm font-bold"
               style={{ borderColor: "#bdd9f0", background: "#fff", color: "#002858" }}
             >
@@ -346,7 +346,7 @@ export function HomeClient({
           </span>
           {searchMeta.hasNextPage ? (
             <Link
-              href={`/?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page + 1}`}
+              href={`/centros?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page + 1}`}
               className="rounded-lg border px-4 py-2 text-sm font-bold"
               style={{ borderColor: "#bdd9f0", background: "#fff", color: "#002858" }}
             >

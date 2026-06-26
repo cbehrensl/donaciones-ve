@@ -1,4 +1,7 @@
+import { unstable_cache } from "next/cache";
 import { hashManagementCode } from "@/lib/gestion-code";
+
+const FILTRO_PAIS = process.env.FILTRO_PAIS;
 import {
   createSupabaseClient,
   createSupabaseServiceClient,
@@ -296,6 +299,7 @@ export async function getCentrosAcopio(
       )
     `,
     )
+    .eq("pais", FILTRO_PAIS ?? "VE")
     .in("estatus", ["activo", "saturado", "sin_verificar"])
     .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
     .order("nombre");
@@ -330,8 +334,43 @@ export async function getHomeData(): Promise<{
   searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
 }> {
-  return getHomeDataWithFilters({ q: "", estadoId: "", municipioId: "" });
+  return getHomeDataWithFilters({ q: "", estadoId: "", municipioId: "", page: 0 });
 }
+
+const getCachedEstados = unstable_cache(
+  async () => {
+    const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+    if (!supabase) return { data: null, error: new Error("No supabase client") };
+    return supabase.from("estados").select("id, nombre").order("nombre");
+  },
+  ["estados"],
+  { revalidate: 3600 },
+);
+
+const getCachedMunicipios = unstable_cache(
+  async () => {
+    const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+    if (!supabase) return { data: null, error: new Error("No supabase client") };
+    return supabase.from("municipios").select("id, nombre, estado_id").order("nombre");
+  },
+  ["municipios"],
+  { revalidate: 3600 },
+);
+
+const getCachedContactosEmergencia = unstable_cache(
+  async () => {
+    const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+    if (!supabase) return { data: null, error: new Error("No supabase client") };
+    return supabase
+      .from("contactos_emergencia")
+      .select(`id, nombre, descripcion, categoria, telefonos, whatsapp, zona, estado_id, disponible_24h, es_gratuito, estados ( id, nombre )`)
+      .eq("activo", true)
+      .order("categoria")
+      .order("nombre");
+  },
+  ["contactos_emergencia"],
+  { revalidate: 300 },
+);
 
 export async function getHomeDataWithFilters(
   filters: HomeSearchFilters,
@@ -345,7 +384,10 @@ export async function getHomeDataWithFilters(
 }> {
   const errors: DataLoadError[] = [];
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
-  const limit = 50;
+  const pageSize = 10;
+  const page = Math.max(0, filters.page ?? 0);
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
   const searchTerm = sanitizeSearchTerm(filters.q);
 
   if (!supabase) {
@@ -354,7 +396,7 @@ export async function getHomeDataWithFilters(
       municipios: [],
       centros: [],
       contactosEmergencia: [],
-      searchMeta: { limit, reachedLimit: false },
+      searchMeta: { page, pageSize, totalCount: 0, hasNextPage: false, hasPrevPage: false },
       errors: [
         {
           scope: "Configuración",
@@ -396,11 +438,13 @@ export async function getHomeDataWithFilters(
         categorias_insumo ( id, nombre )
       )
     `,
+      { count: "exact" },
     )
+    .eq("pais", FILTRO_PAIS ?? "VE")
     .in("estatus", ["activo", "saturado", "sin_verificar"])
     .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
     .order("updated_at", { ascending: false })
-    .limit(limit + 1);
+    .range(from, to);
 
   if (filters.estadoId) {
     centrosQuery = centrosQuery.eq("estado_id", filters.estadoId);
@@ -418,29 +462,10 @@ export async function getHomeDataWithFilters(
 
   const [estadosResult, municipiosResult, centrosResult, contactosResult] =
     await Promise.all([
-      supabase.from("estados").select("id, nombre").order("nombre"),
-      supabase.from("municipios").select("id, nombre, estado_id").order("nombre"),
+      getCachedEstados(),
+      getCachedMunicipios(),
       centrosQuery,
-      supabase
-        .from("contactos_emergencia")
-        .select(
-          `
-          id,
-          nombre,
-          descripcion,
-          categoria,
-          telefonos,
-          whatsapp,
-          zona,
-          estado_id,
-          disponible_24h,
-          es_gratuito,
-          estados ( id, nombre )
-        `,
-        )
-        .eq("activo", true)
-        .order("categoria")
-        .order("nombre"),
+      getCachedContactosEmergencia(),
     ]);
 
   if (estadosResult.error) {
@@ -472,7 +497,7 @@ export async function getHomeDataWithFilters(
   }
 
   const centrosRows = centrosResult.data ?? [];
-  const reachedLimit = centrosRows.length > limit;
+  const totalCount = centrosResult.count ?? 0;
 
   return {
     estados: (estadosResult.data ?? []).map((row) =>
@@ -481,13 +506,19 @@ export async function getHomeDataWithFilters(
     municipios: (municipiosResult.data ?? []).map((row) =>
       normalizeMunicipio(row as Record<string, unknown>),
     ),
-    centros: centrosRows.slice(0, limit).map((row) =>
+    centros: centrosRows.map((row) =>
       normalizeCentro(row as Record<string, unknown>),
     ),
     contactosEmergencia: (contactosResult.data ?? []).map((row) =>
       normalizeContactoEmergencia(row as Record<string, unknown>),
     ),
-    searchMeta: { limit, reachedLimit },
+    searchMeta: {
+      page,
+      pageSize,
+      totalCount,
+      hasNextPage: from + pageSize < totalCount,
+      hasPrevPage: page > 0,
+    },
     errors,
   };
 }
@@ -676,6 +707,7 @@ export async function getCentroById(centroId: string): Promise<CentroAcopio | nu
     `,
     )
     .eq("id", centroId)
+    .eq("pais", FILTRO_PAIS ?? "VE")
     .in("estatus", ["activo", "saturado", "sin_verificar"])
     .maybeSingle();
 

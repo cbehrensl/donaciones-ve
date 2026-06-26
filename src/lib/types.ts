@@ -94,11 +94,15 @@ export interface HomeSearchFilters {
   q: string;
   estadoId: string;
   municipioId: string;
+  page: number;
 }
 
 export interface HomeSearchMeta {
-  limit: number;
-  reachedLimit: boolean;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 export interface ModeracionSearchFilters {
