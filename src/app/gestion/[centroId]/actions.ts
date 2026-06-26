@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirectGestionCentro } from "@/lib/action-feedback";
+import {
+  actionError,
+  actionSuccess,
+  type ActionResult,
+} from "@/lib/action-feedback";
 import { getCentroForManagement, mapUrgenciaToDb } from "@/lib/data";
 import { requireSupabaseServiceClient } from "@/lib/supabase";
 import type { TipoInsumo, Urgencia } from "@/lib/types";
@@ -49,7 +53,9 @@ function getCodigo(formData: FormData): string {
   return String(formData.get("codigo") ?? "").trim();
 }
 
-export async function actualizarDetallesCentro(formData: FormData): Promise<void> {
+export async function actualizarDetallesCentro(
+  formData: FormData,
+): Promise<ActionResult> {
   const centroId = String(formData.get("centroId") ?? "");
   const codigo = getCodigo(formData);
   const contacto = String(formData.get("contacto") ?? "").trim() || null;
@@ -63,11 +69,11 @@ export async function actualizarDetallesCentro(formData: FormData): Promise<void
     String(formData.get("horario_recepcion") ?? "").trim() || null;
 
   if (!centroId || !codigo) {
-    redirectGestionCentro(centroId, codigo, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   if (!(await assertCentroAccess(centroId, codigo))) {
-    redirectGestionCentro(centroId, codigo, { error: "acceso-denegado" });
+    return actionError("acceso-denegado");
   }
 
   if (
@@ -75,7 +81,7 @@ export async function actualizarDetallesCentro(formData: FormData): Promise<void
     fechaFinRecepcion &&
     fechaFinRecepcion < fechaInicioRecepcion
   ) {
-    redirectGestionCentro(centroId, codigo, { error: "fechas-invalidas" });
+    return actionError("fechas-invalidas");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -93,15 +99,17 @@ export async function actualizarDetallesCentro(formData: FormData): Promise<void
 
   if (error) {
     console.error("Error actualizando detalles del centro:", error.message);
-    redirectGestionCentro(centroId, codigo, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath(`/gestion/${centroId}`);
-  redirectGestionCentro(centroId, codigo, { ok: "detalles-guardados" });
+  return actionSuccess("detalles-guardados");
 }
 
-export async function actualizarUrgenciaNecesidad(formData: FormData): Promise<void> {
+export async function actualizarUrgenciaNecesidad(
+  formData: FormData,
+): Promise<ActionResult> {
   const centroId = String(formData.get("centroId") ?? "");
   const codigo = getCodigo(formData);
   const necesidadId = String(formData.get("necesidadId") ?? "");
@@ -113,11 +121,11 @@ export async function actualizarUrgenciaNecesidad(formData: FormData): Promise<v
     !necesidadId ||
     !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)
   ) {
-    redirectGestionCentro(centroId, codigo, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   if (!(await assertCentroAccess(centroId, codigo))) {
-    redirectGestionCentro(centroId, codigo, { error: "acceso-denegado" });
+    return actionError("acceso-denegado");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -129,25 +137,27 @@ export async function actualizarUrgenciaNecesidad(formData: FormData): Promise<v
 
   if (error) {
     console.error("Error actualizando urgencia:", error.message);
-    redirectGestionCentro(centroId, codigo, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath(`/gestion/${centroId}`);
-  redirectGestionCentro(centroId, codigo, { ok: "insumo-actualizado" });
+  return actionSuccess("insumo-actualizado");
 }
 
-export async function eliminarNecesidad(formData: FormData): Promise<void> {
+export async function eliminarNecesidad(
+  formData: FormData,
+): Promise<ActionResult> {
   const centroId = String(formData.get("centroId") ?? "");
   const codigo = getCodigo(formData);
   const necesidadId = String(formData.get("necesidadId") ?? "");
 
   if (!centroId || !codigo || !necesidadId) {
-    redirectGestionCentro(centroId, codigo, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   if (!(await assertCentroAccess(centroId, codigo))) {
-    redirectGestionCentro(centroId, codigo, { error: "acceso-denegado" });
+    return actionError("acceso-denegado");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -159,15 +169,17 @@ export async function eliminarNecesidad(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error eliminando necesidad:", error.message);
-    redirectGestionCentro(centroId, codigo, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath(`/gestion/${centroId}`);
-  redirectGestionCentro(centroId, codigo, { ok: "insumo-eliminado" });
+  return actionSuccess("insumo-eliminado");
 }
 
-export async function agregarNecesidad(formData: FormData): Promise<void> {
+export async function agregarNecesidad(
+  formData: FormData,
+): Promise<ActionResult> {
   const centroId = String(formData.get("centroId") ?? "");
   const codigo = getCodigo(formData);
   const tipoInsumo = String(formData.get("tipo_insumo") ?? "") as TipoInsumo;
@@ -175,11 +187,11 @@ export async function agregarNecesidad(formData: FormData): Promise<void> {
   const detalle = String(formData.get("detalle") ?? "").trim() || null;
 
   if (!centroId || !codigo) {
-    redirectGestionCentro(centroId, codigo, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   if (!(await assertCentroAccess(centroId, codigo))) {
-    redirectGestionCentro(centroId, codigo, { error: "acceso-denegado" });
+    return actionError("acceso-denegado");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -191,7 +203,7 @@ export async function agregarNecesidad(formData: FormData): Promise<void> {
     .maybeSingle();
 
   if (!categoria || !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)) {
-    redirectGestionCentro(centroId, codigo, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const { error } = await supabase.from("necesidades").upsert(
@@ -207,10 +219,10 @@ export async function agregarNecesidad(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error agregando necesidad:", error.message);
-    redirectGestionCentro(centroId, codigo, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath(`/gestion/${centroId}`);
-  redirectGestionCentro(centroId, codigo, { ok: "insumo-agregado" });
+  return actionSuccess("insumo-agregado");
 }

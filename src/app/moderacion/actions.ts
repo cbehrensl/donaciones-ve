@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirectModeracion } from "@/lib/action-feedback";
+import {
+  actionError,
+  actionSuccess,
+  type ActionResult,
+} from "@/lib/action-feedback";
 import { mapUrgenciaToDb } from "@/lib/data";
 import { isModeratorTokenValid } from "@/lib/moderacion-auth";
 import { requireSupabaseServiceClient } from "@/lib/supabase";
@@ -42,9 +46,9 @@ function parseOptionalDate(value: FormDataEntryValue | null): string | null {
 
 export async function actualizarDetallesCentroModeracion(
   formData: FormData,
-): Promise<void> {
+): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const centroId = String(formData.get("centroId") ?? "");
@@ -65,7 +69,7 @@ export async function actualizarDetallesCentroModeracion(
     String(formData.get("responsable_telefono") ?? "").trim() || null;
 
   if (!centroId || !nombre || !direccion) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   if (
@@ -73,7 +77,7 @@ export async function actualizarDetallesCentroModeracion(
     fechaFinRecepcion &&
     fechaFinRecepcion < fechaInicioRecepcion
   ) {
-    redirectModeracion(formData, { error: "fechas-invalidas" });
+    return actionError("fechas-invalidas");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -95,24 +99,26 @@ export async function actualizarDetallesCentroModeracion(
 
   if (error) {
     console.error("Error actualizando detalles desde moderación:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, { ok: "centro-actualizado" });
+  return actionSuccess("centro-actualizado");
 }
 
-export async function actualizarVerificacion(formData: FormData): Promise<void> {
+export async function actualizarVerificacion(
+  formData: FormData,
+): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const centroId = String(formData.get("centroId") ?? "");
   const verificado = formData.get("verificado") === "true";
 
   if (!centroId) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -127,26 +133,26 @@ export async function actualizarVerificacion(formData: FormData): Promise<void> 
 
   if (error) {
     console.error("Error actualizando centro:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, {
-    ok: verificado ? "centro-aprobado" : "centro-pendiente",
-  });
+  return actionSuccess(verificado ? "centro-aprobado" : "centro-pendiente");
 }
 
-export async function actualizarUrgencia(formData: FormData): Promise<void> {
+export async function actualizarUrgencia(
+  formData: FormData,
+): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const necesidadId = String(formData.get("necesidadId") ?? "");
   const urgencia = String(formData.get("urgencia") ?? "") as Urgencia;
 
   if (!necesidadId || !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -157,24 +163,26 @@ export async function actualizarUrgencia(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error actualizando urgencia:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, { ok: "insumo-actualizado" });
+  return actionSuccess("insumo-actualizado");
 }
 
-export async function eliminarNecesidadModeracion(formData: FormData): Promise<void> {
+export async function eliminarNecesidadModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const centroId = String(formData.get("centroId") ?? "");
   const necesidadId = String(formData.get("necesidadId") ?? "");
 
   if (!centroId || !necesidadId) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -186,17 +194,19 @@ export async function eliminarNecesidadModeracion(formData: FormData): Promise<v
 
   if (error) {
     console.error("Error eliminando necesidad desde moderación:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, { ok: "insumo-eliminado" });
+  return actionSuccess("insumo-eliminado");
 }
 
-export async function agregarNecesidadModeracion(formData: FormData): Promise<void> {
+export async function agregarNecesidadModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const centroId = String(formData.get("centroId") ?? "");
@@ -209,7 +219,7 @@ export async function agregarNecesidadModeracion(formData: FormData): Promise<vo
     !categoriaId ||
     !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)
   ) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -226,23 +236,23 @@ export async function agregarNecesidadModeracion(formData: FormData): Promise<vo
 
   if (error) {
     console.error("Error agregando necesidad desde moderación:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, { ok: "insumo-agregado" });
+  return actionSuccess("insumo-agregado");
 }
 
-export async function ocultarCentro(formData: FormData): Promise<void> {
+export async function ocultarCentro(formData: FormData): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const centroId = String(formData.get("centroId") ?? "");
 
   if (!centroId) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -256,23 +266,23 @@ export async function ocultarCentro(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error ocultando centro:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, { ok: "centro-oculto" });
+  return actionSuccess("centro-oculto");
 }
 
-export async function mostrarCentro(formData: FormData): Promise<void> {
+export async function mostrarCentro(formData: FormData): Promise<ActionResult> {
   if (!isAuthorized(formData)) {
-    redirectModeracion(formData, { error: "no-autorizado" });
+    return actionError("no-autorizado");
   }
 
   const centroId = String(formData.get("centroId") ?? "");
 
   if (!centroId) {
-    redirectModeracion(formData, { error: "datos-invalidos" });
+    return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
@@ -284,7 +294,7 @@ export async function mostrarCentro(formData: FormData): Promise<void> {
 
   if (selectError || !centro) {
     console.error("Error leyendo centro oculto:", selectError?.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   const verificado = Boolean(centro.verificado);
@@ -298,10 +308,10 @@ export async function mostrarCentro(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Error mostrando centro:", error.message);
-    redirectModeracion(formData, { error: "error-guardar" });
+    return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
-  redirectModeracion(formData, { ok: "centro-visible" });
+  return actionSuccess("centro-visible");
 }

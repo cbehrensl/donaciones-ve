@@ -6,7 +6,8 @@ import {
   agregarNecesidad,
   eliminarNecesidad,
 } from "@/app/gestion/[centroId]/actions";
-import { ActionFeedback } from "@/components/ActionFeedback";
+import { SnackbarForm } from "@/components/SnackbarForm";
+import { SnackbarShell } from "@/components/SnackbarShell";
 import { getCentroForManagement } from "@/lib/data";
 import { URGENCIA_STYLES } from "@/lib/semaforo";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -32,7 +33,7 @@ const TIPOS_INSUMO: TipoInsumo[] = [
 
 interface GestionCentroPageProps {
   params: Promise<{ centroId: string }>;
-  searchParams: Promise<{ codigo?: string; ok?: string; error?: string }>;
+  searchParams: Promise<{ codigo?: string }>;
 }
 
 async function loadCentro(
@@ -51,7 +52,7 @@ export default async function GestionCentroPage({
   searchParams,
 }: GestionCentroPageProps) {
   const { centroId } = await params;
-  const { codigo: codigoRaw, ok, error } = await searchParams;
+  const { codigo: codigoRaw } = await searchParams;
   const codigo = codigoRaw?.trim() ?? "";
 
   if (!codigo) {
@@ -65,6 +66,7 @@ export default async function GestionCentroPage({
   }
 
   return (
+    <SnackbarShell>
     <div className="mx-auto min-h-screen max-w-2xl px-4 py-6">
       <header className="mb-6 border-b border-zinc-200 pb-4">
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -109,11 +111,9 @@ export default async function GestionCentroPage({
         ) : null}
       </header>
 
-      <ActionFeedback ok={ok} error={error} />
-
       <section className="mb-8">
         <h2 className="mb-4 text-lg font-bold">Detalles del centro</h2>
-        <form
+        <SnackbarForm
           action={actualizarDetallesCentro}
           className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
         >
@@ -224,7 +224,7 @@ export default async function GestionCentroPage({
           >
             Guardar detalles
           </button>
-        </form>
+        </SnackbarForm>
       </section>
 
       <section>
@@ -254,7 +254,10 @@ export default async function GestionCentroPage({
                 ) : null}
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <form action={actualizarUrgenciaNecesidad} className="flex flex-1 gap-2">
+                  <SnackbarForm
+                    action={actualizarUrgenciaNecesidad}
+                    className="flex flex-1 gap-2"
+                  >
                     <input type="hidden" name="centroId" value={centroId} />
                     <input type="hidden" name="codigo" value={codigo} />
                     <input type="hidden" name="necesidadId" value={necesidad.id} />
@@ -274,9 +277,9 @@ export default async function GestionCentroPage({
                     >
                       Actualizar
                     </button>
-                  </form>
+                  </SnackbarForm>
 
-                  <form action={eliminarNecesidad}>
+                  <SnackbarForm action={eliminarNecesidad}>
                     <input type="hidden" name="centroId" value={centroId} />
                     <input type="hidden" name="codigo" value={codigo} />
                     <input type="hidden" name="necesidadId" value={necesidad.id} />
@@ -287,14 +290,14 @@ export default async function GestionCentroPage({
                     >
                       Eliminar
                     </button>
-                  </form>
+                  </SnackbarForm>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        <form
+        <SnackbarForm
           action={agregarNecesidad}
           className="rounded-xl border border-zinc-200 bg-zinc-50 p-5"
         >
@@ -351,8 +354,9 @@ export default async function GestionCentroPage({
           >
             + Agregar insumo
           </button>
-        </form>
+        </SnackbarForm>
       </section>
     </div>
+    </SnackbarShell>
   );
 }

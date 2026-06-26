@@ -1,11 +1,14 @@
-import { redirect } from "next/navigation";
-
 export type ActionFeedbackTone = "success" | "error";
 
 export interface ActionFeedbackMessage {
   tone: ActionFeedbackTone;
   text: string;
 }
+
+export type ActionResult = {
+  ok: boolean;
+  code: string;
+};
 
 export const ACTION_MESSAGES: Record<string, ActionFeedbackMessage> = {
   "detalles-guardados": {
@@ -97,54 +100,10 @@ export function getActionMessage(
   );
 }
 
-function appendModeracionContext(
-  params: URLSearchParams,
-  formData: FormData,
-): void {
-  const token = String(formData.get("token") ?? "").trim();
-  const q = String(formData.get("q") ?? "").trim();
-  const estatus = String(formData.get("estatus") ?? "").trim();
-  const verificacion = String(formData.get("verificacion") ?? "").trim();
-  const page = String(formData.get("page") ?? "").trim();
-
-  if (token) params.set("token", token);
-  if (q) params.set("q", q);
-  if (estatus && estatus !== "todos") params.set("estatus", estatus);
-  if (verificacion && verificacion !== "todos") {
-    params.set("verificacion", verificacion);
-  }
-  if (page && page !== "1") params.set("page", page);
+export function actionSuccess(code: string): ActionResult {
+  return { ok: true, code };
 }
 
-export function redirectModeracion(
-  formData: FormData,
-  feedback: { ok?: string; error?: string },
-): never {
-  const params = new URLSearchParams();
-  appendModeracionContext(params, formData);
-
-  if (feedback.ok) params.set("ok", feedback.ok);
-  if (feedback.error) params.set("error", feedback.error);
-
-  redirect(`/moderacion?${params.toString()}`);
-}
-
-export function redirectGestionCentro(
-  centroId: string,
-  codigo: string,
-  feedback: { ok?: string; error?: string },
-): never {
-  if (!centroId || !codigo) {
-    const params = new URLSearchParams();
-    params.set("error", feedback.error ?? "acceso-denegado");
-    redirect(`/gestion?${params.toString()}`);
-  }
-
-  const params = new URLSearchParams();
-  params.set("codigo", codigo);
-
-  if (feedback.ok) params.set("ok", feedback.ok);
-  if (feedback.error) params.set("error", feedback.error);
-
-  redirect(`/gestion/${centroId}?${params.toString()}`);
+export function actionError(code: string): ActionResult {
+  return { ok: false, code };
 }

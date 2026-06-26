@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ActionFeedback } from "@/components/ActionFeedback";
-import { resolverCodigoGestion } from "@/app/gestion/actions";
+import { GestionLoginForm } from "@/app/gestion/GestionLoginForm";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 interface GestionLoginPageProps {
@@ -10,7 +9,7 @@ interface GestionLoginPageProps {
 export default async function GestionLoginPage({
   searchParams,
 }: GestionLoginPageProps) {
-  const params = await searchParams;
+  await searchParams;
 
   return (
     <div className="mx-auto min-h-screen max-w-lg px-4 py-8">
@@ -30,32 +29,7 @@ export default async function GestionLoginPage({
         </section>
       ) : null}
 
-      <ActionFeedback error={params.error} />
-
-      <form
-        action={resolverCodigoGestion}
-        className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
-      >
-        <label htmlFor="codigo" className="mb-2 block text-sm font-bold">
-          Código de gestión
-        </label>
-        <input
-          id="codigo"
-          name="codigo"
-          type="text"
-          required
-          autoComplete="off"
-          spellCheck={false}
-          placeholder="DV-XXXX-XXXX-XXXX"
-          className="mb-4 w-full rounded-lg border-2 border-zinc-300 px-3 py-3 font-mono text-lg tracking-wider focus:border-zinc-900 focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="w-full rounded-lg bg-blue-800 px-4 py-3 text-base font-bold text-white shadow-md transition-colors hover:bg-blue-900"
-        >
-          Entrar al panel
-        </button>
-      </form>
+      <GestionLoginForm />
 
       <p className="mt-6 text-center text-sm text-zinc-600">
         ¿Aún no tienes centro?{" "}

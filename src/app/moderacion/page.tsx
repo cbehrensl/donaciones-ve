@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ActionFeedback } from "@/components/ActionFeedback";
-import { ModeracionFormContext } from "@/components/ModeracionFormContext";
+import { SnackbarForm } from "@/components/SnackbarForm";
+import { SnackbarShell } from "@/components/SnackbarShell";
 import {
   getCategoriasInsumo,
   getCentrosParaModeracion,
@@ -39,8 +39,6 @@ interface ModeracionPageProps {
     estatus?: string;
     verificacion?: string;
     page?: string;
-    ok?: string;
-    error?: string;
   }>;
 }
 
@@ -185,13 +183,6 @@ export default async function ModeracionPage({
     page: String(page + 1),
   }).toString()}`;
   const clearHref = `/moderacion?${new URLSearchParams({ token }).toString()}`;
-  const formContext = {
-    token,
-    q: textoFiltro,
-    estatus: estatusFiltro,
-    verificacion: verificacionFiltro,
-    page,
-  };
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-6">
@@ -260,9 +251,8 @@ export default async function ModeracionPage({
           </form>
         </section>
       ) : (
+        <SnackbarShell>
         <section className="space-y-6">
-          <ActionFeedback ok={params.ok} error={params.error} />
-
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
@@ -559,11 +549,11 @@ export default async function ModeracionPage({
                       <summary className="cursor-pointer px-3 py-2 text-sm font-black uppercase tracking-wide text-zinc-700">
                         Administrar datos del centro
                       </summary>
-                      <form
+                      <SnackbarForm
                         action={actualizarDetallesCentroModeracion}
                         className="grid gap-3 border-t border-zinc-200 p-3"
                       >
-                        <ModeracionFormContext {...formContext} />
+                        <input type="hidden" name="token" value={token} />
                         <input type="hidden" name="centroId" value={centro.id} />
                         <div className="grid gap-3 sm:grid-cols-2">
                           <label className="text-sm font-bold text-zinc-700">
@@ -664,15 +654,15 @@ export default async function ModeracionPage({
                         >
                           Guardar datos del centro
                         </button>
-                      </form>
+                      </SnackbarForm>
                     </details>
                   ) : null}
 
                   <div className="mb-4 flex flex-wrap gap-2">
                     {!estaOculto ? (
                       <>
-                        <form action={actualizarVerificacion}>
-                          <ModeracionFormContext {...formContext} />
+                        <SnackbarForm action={actualizarVerificacion}>
+                          <input type="hidden" name="token" value={token} />
                           <input type="hidden" name="centroId" value={centro.id} />
                           <input
                             type="hidden"
@@ -691,10 +681,10 @@ export default async function ModeracionPage({
                               ? "Marcar como pendiente"
                               : "Aprobar centro"}
                           </button>
-                        </form>
+                        </SnackbarForm>
 
-                        <form action={ocultarCentro}>
-                          <ModeracionFormContext {...formContext} />
+                        <SnackbarForm action={ocultarCentro}>
+                          <input type="hidden" name="token" value={token} />
                           <input type="hidden" name="centroId" value={centro.id} />
                           <button
                             type="submit"
@@ -702,11 +692,11 @@ export default async function ModeracionPage({
                           >
                             Ocultar centro
                           </button>
-                        </form>
+                        </SnackbarForm>
                       </>
                     ) : (
-                      <form action={mostrarCentro}>
-                        <ModeracionFormContext {...formContext} />
+                      <SnackbarForm action={mostrarCentro}>
+                        <input type="hidden" name="token" value={token} />
                         <input type="hidden" name="centroId" value={centro.id} />
                         <button
                           type="submit"
@@ -714,16 +704,16 @@ export default async function ModeracionPage({
                         >
                           Volver a mostrar
                         </button>
-                      </form>
+                      </SnackbarForm>
                     )}
                   </div>
 
                   {!estaOculto ? (
-                    <form
+                    <SnackbarForm
                       action={agregarNecesidadModeracion}
                       className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3"
                     >
-                      <ModeracionFormContext {...formContext} />
+                      <input type="hidden" name="token" value={token} />
                       <input type="hidden" name="centroId" value={centro.id} />
                       <p className="mb-3 text-sm font-black uppercase tracking-wide text-blue-900">
                         Agregar insumo
@@ -762,7 +752,7 @@ export default async function ModeracionPage({
                         placeholder="Detalle opcional: cantidad, presentación, prioridad..."
                         className="mt-2 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm"
                       />
-                    </form>
+                    </SnackbarForm>
                   ) : null}
 
                   {(centro.necesidades ?? []).length === 0 ? (
@@ -780,11 +770,11 @@ export default async function ModeracionPage({
                             <strong>{necesidad.tipo_insumo}</strong>
                             {necesidad.detalle ? `: ${necesidad.detalle}` : ""}
                           </p>
-                          <form
+                          <SnackbarForm
                             action={actualizarUrgencia}
                             className="flex flex-wrap items-center gap-2"
                           >
-                            <ModeracionFormContext {...formContext} />
+                            <input type="hidden" name="token" value={token} />
                             <input
                               type="hidden"
                               name="necesidadId"
@@ -809,9 +799,9 @@ export default async function ModeracionPage({
                             >
                               Guardar
                             </button>
-                          </form>
-                          <form action={eliminarNecesidadModeracion}>
-                            <ModeracionFormContext {...formContext} />
+                          </SnackbarForm>
+                          <SnackbarForm action={eliminarNecesidadModeracion}>
+                            <input type="hidden" name="token" value={token} />
                             <input type="hidden" name="centroId" value={centro.id} />
                             <input
                               type="hidden"
@@ -824,7 +814,7 @@ export default async function ModeracionPage({
                             >
                               Quitar
                             </button>
-                          </form>
+                          </SnackbarForm>
                         </li>
                       ))}
                     </ul>
@@ -834,6 +824,7 @@ export default async function ModeracionPage({
             })
           )}
         </section>
+        </SnackbarShell>
       )}
     </div>
   );

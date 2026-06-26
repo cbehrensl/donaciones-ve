@@ -1,25 +1,31 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { getCentroByManagementCode } from "@/lib/data";
+import {
+  actionError,
+  actionSuccess,
+  type ActionResult,
+} from "@/lib/action-feedback";
 import {
   isSupabaseConfigured,
   isSupabaseServiceConfigured,
 } from "@/lib/supabase";
 
-export async function resolverCodigoGestion(formData: FormData): Promise<void> {
+export async function resolverCodigoGestion(
+  formData: FormData,
+): Promise<ActionResult & { centroId?: string; codigo?: string }> {
   const codigo = formData.get("codigo");
 
   if (typeof codigo !== "string" || !codigo.trim()) {
-    redirect("/gestion?error=codigo-vacio");
+    return actionError("codigo-vacio");
   }
 
   if (!isSupabaseConfigured()) {
-    redirect("/gestion?error=supabase-no-configurado");
+    return actionError("supabase-no-configurado");
   }
 
   if (!isSupabaseServiceConfigured()) {
-    redirect("/gestion?error=supabase-service-no-configurado");
+    return actionError("supabase-service-no-configurado");
   }
 
   const result = await getCentroByManagementCode(codigo).catch((error) => {
@@ -28,9 +34,12 @@ export async function resolverCodigoGestion(formData: FormData): Promise<void> {
   });
 
   if (!result) {
-    redirect("/gestion?error=codigo-invalido");
+    return actionError("codigo-invalido");
   }
 
-  const encoded = encodeURIComponent(codigo.trim());
-  redirect(`/gestion/${result.centro.id}?codigo=${encoded}`);
+  return {
+    ...actionSuccess("detalles-guardados"),
+    centroId: result.centro.id,
+    codigo: codigo.trim(),
+  };
 }
