@@ -89,11 +89,16 @@ export function SpotlightTour({
 
   const cardPosition = useMemo(() => {
     if (!rect) {
-      return "left-4 right-4 bottom-6";
+      return "left-4 right-4 top-16";
     }
 
     const canFitBelow = rect.top + rect.height + 220 < window.innerHeight;
-    const top = canFitBelow ? rect.top + rect.height + 16 : 24;
+    const canFitAbove = rect.top - 220 > 48;
+    const top = canFitBelow
+      ? rect.top + rect.height + 16
+      : canFitAbove
+        ? rect.top - 220
+        : 56;
     const left = Math.min(Math.max(rect.left, 16), window.innerWidth - 336);
 
     return { top, left };
