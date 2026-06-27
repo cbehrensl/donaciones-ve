@@ -163,7 +163,7 @@ export function HomeClient({
           Plataforma centralizada para coordinar ayuda humanitaria en tiempo real.
         </p>
 
-        <div id="tour-actions" className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div id="tour-actions" className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/centros/nuevo"
             className="cta-primary flex items-center justify-center gap-2 rounded-xl bg-blue-800 px-5 py-4 text-base font-bold text-white shadow-md transition-all hover:bg-blue-900 active:scale-[0.98]"
@@ -181,6 +181,12 @@ export function HomeClient({
             className="cta-secondary flex items-center justify-center gap-2 rounded-xl border-2 border-blue-100 bg-blue-50 px-5 py-4 text-base font-bold text-blue-900 shadow-sm transition-colors hover:bg-blue-100 active:scale-[0.98]"
           >
             <span>🔐</span> Panel moderador
+          </Link>
+          <Link
+            href="/mapa"
+            className="cta-secondary flex items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-5 py-4 text-base font-bold text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98]"
+          >
+            <span>🗺️</span> Ver en mapa
           </Link>
         </div>
       </header>
