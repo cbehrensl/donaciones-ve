@@ -36,6 +36,7 @@ export function HomeClient({
 }: HomeClientProps) {
   const [estadoId, setEstadoId] = useState(initialFilters.estadoId);
   const [municipioId, setMunicipioId] = useState(initialFilters.municipioId);
+  const [filtrosVisibles, setFiltrosVisibles] = useState(false);
   const tourSteps = [
     {
       targetId: "tour-actions",
@@ -244,63 +245,66 @@ export function HomeClient({
         )}
       </details>
 
-      <div id="tour-filters" className="-mx-4 mb-8 px-4 py-4 sm:mx-0 sm:rounded-xl sm:border sm:p-6 sm:shadow-sm" style={{ background: "#fff", borderColor: "#bdd9f0" }}>
-        <h2 className="mb-4 text-xs font-black uppercase tracking-widest" style={{ color: "#0084D0" }}>
+      {/* Botón toggle solo en mobile */}
+      <button
+        type="button"
+        onClick={() => setFiltrosVisibles((v) => !v)}
+        className="sm:hidden mb-3 w-full flex items-center justify-between rounded-xl border px-3 py-2 text-sm font-bold"
+        style={{ borderColor: "#bdd9f0", background: "#fff", color: "#002858" }}
+      >
+        <span>🔍 Buscar y filtrar</span>
+        <span style={{ color: "#0084D0" }}>{filtrosVisibles ? "▲ Ocultar" : "▼ Mostrar"}</span>
+      </button>
+
+      <div id="tour-filters" className={`mb-6 px-3 py-3 sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:py-4 sm:shadow-sm sm:block ${filtrosVisibles ? "block -mx-4 sm:mx-0" : "hidden sm:block"}`} style={{ background: "#fff", borderColor: "#bdd9f0" }}>
+        <h2 className="mb-2 text-[10px] font-black uppercase tracking-widest" style={{ color: "#0084D0" }}>
           Buscar centros registrados
         </h2>
         {errors.length === 0 && estados.length === 0 ? (
-          <p className="mb-4 rounded-lg border p-3 text-sm" style={{ borderColor: "#bdd9f0", background: "#EBF3FB", color: "#002858" }}>
-            No se recibieron estados desde Supabase. Verifica que la tabla tenga
-            datos y que las políticas de lectura permitan consultar la data
-            geográfica.
+          <p className="mb-2 rounded-lg border p-2 text-xs" style={{ borderColor: "#bdd9f0", background: "#EBF3FB", color: "#002858" }}>
+            No se recibieron estados desde Supabase.
           </p>
         ) : null}
         <form action="/centros" method="get">
-          <label
-            htmlFor="busqueda-centros"
-            className="mb-1.5 block text-sm font-bold uppercase tracking-wider"
-            style={{ color: "#002858" }}
-          >
-            Buscar por texto
-          </label>
-          <input
-            id="busqueda-centros"
-            name="q"
-            type="search"
-            defaultValue={initialFilters.q}
-            placeholder="Nombre, dirección o teléfono"
-            className="mb-4 w-full rounded-lg border-2 px-3 py-2.5 text-base font-medium focus:outline-none"
-            style={{ borderColor: "#bdd9f0", color: "#002858", background: "#EBF3FB" }}
-          />
-          <FiltroGeografico
-            estados={estados}
-            municipios={municipios}
-            estadoId={estadoId}
-            municipioId={municipioId}
-            estadoName="estado"
-            municipioName="municipio"
-            onEstadoChange={handleEstadoChange}
-            onMunicipioChange={setMunicipioId}
-          />
-          <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "#EBF3FB" }}>
-            <p className="text-sm font-semibold" style={{ color: "#002858" }}>
-              {searchMeta.totalCount}{" "}
-              <span className="font-medium" style={{ color: "#0084D0" }}>
-                {searchMeta.totalCount === 1 ? "centro encontrado" : "centros encontrados"}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <input
+              id="busqueda-centros"
+              name="q"
+              type="search"
+              defaultValue={initialFilters.q}
+              placeholder="Nombre, dirección o teléfono"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+              style={{ borderColor: "#bdd9f0", color: "#002858", background: "#EBF3FB" }}
+            />
+            <FiltroGeografico
+              estados={estados}
+              municipios={municipios}
+              estadoId={estadoId}
+              municipioId={municipioId}
+              estadoName="estado"
+              municipioName="municipio"
+              onEstadoChange={handleEstadoChange}
+              onMunicipioChange={setMunicipioId}
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: "#EBF3FB" }}>
+            <p className="text-xs font-semibold" style={{ color: "#002858" }}>
+              <span style={{ color: "#0084D0" }}>
+                {searchMeta.totalCount} {searchMeta.totalCount === 1 ? "centro" : "centros"}
                 {textoResultados}
               </span>
             </p>
             <div className="flex gap-2">
               <Link
                 href="/centros"
-                className="cta-secondary rounded-lg border px-4 py-2 text-sm font-bold"
+                className="cta-secondary rounded-lg border px-3 py-1.5 text-xs font-bold"
                 style={{ borderColor: "#bdd9f0", color: "#002858", background: "#EBF3FB" }}
               >
                 Limpiar
               </Link>
               <button
                 type="submit"
-                className="rounded-lg px-4 py-2 text-sm font-bold text-white shadow-sm"
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-white"
                 style={{ background: "#0084D0" }}
               >
                 Buscar
@@ -308,9 +312,8 @@ export function HomeClient({
             </div>
           </div>
           {searchMeta.totalCount > searchMeta.pageSize ? (
-            <p className="mt-3 text-xs" style={{ color: "#0084D0" }}>
-              Mostrando {searchMeta.page * searchMeta.pageSize + 1}–
-              {Math.min((searchMeta.page + 1) * searchMeta.pageSize, searchMeta.totalCount)} de {searchMeta.totalCount} centros.
+            <p className="mt-1 text-[10px]" style={{ color: "#0084D0" }}>
+              Mostrando {searchMeta.page * searchMeta.pageSize + 1}–{Math.min((searchMeta.page + 1) * searchMeta.pageSize, searchMeta.totalCount)} de {searchMeta.totalCount} centros.
             </p>
           ) : null}
         </form>

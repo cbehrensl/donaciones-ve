@@ -7,6 +7,17 @@
   --ftd-blanco:      #FFFFFF;
   --background: var(--ftd-fondo);
   --foreground: var(--ftd-azul);
+
+  /* Altura total de la barra fija superior: 1px brand bar + navbar */
+  --nav-h: 49px;
+  /* Altura disponible para contenido, usando dvh para mobile browsers */
+  --content-h: calc(100dvh - var(--nav-h));
+}
+
+/* Ambas páginas usan la misma altura mínima */
+.page-iframe,
+.page-scroll {
+  min-height: var(--content-h);
 }
 
 @theme inline {

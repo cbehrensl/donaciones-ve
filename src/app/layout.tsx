@@ -27,7 +27,7 @@ export default function RootLayout({
           aria-hidden="true"
         />
         <NavBar />
-        <div className="pt-12">{children}</div>
+        <div className="page-scroll pt-12">{children}</div>
       </body>
     </html>
   );

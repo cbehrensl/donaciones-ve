@@ -27,59 +27,41 @@ export function FiltroGeografico({
   );
 
   return (
-    <div className="mb-2 flex flex-col gap-4 sm:flex-row">
-      {/* Selector de Estado */}
-      <div className="w-full">
-        <label
-          htmlFor="filtro-estado"
-          className="mb-1.5 block text-sm font-bold uppercase tracking-wider text-zinc-800"
-        >
-          Estado
-        </label>
-        <select
-          id="filtro-estado"
-          name={estadoName}
-          value={estadoId}
-          onChange={(e) => onEstadoChange(e.target.value)}
-          className="w-full appearance-none rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base font-medium text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-0"
-        >
-          <option value="">Selecciona un estado</option>
-          {estados.map((estado) => (
-            <option key={estado.id} value={estado.id}>
-              {estado.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Selector de Municipio */}
-      <div className="w-full">
-        <label
-          htmlFor="filtro-municipio"
-          className={`mb-1.5 block text-sm font-bold uppercase tracking-wider ${
-            estadoId ? "text-zinc-800" : "text-zinc-400"
-          }`}
-        >
-          Municipio
-        </label>
-        <select
-          id="filtro-municipio"
-          name={municipioName}
-          value={municipioId}
-          onChange={(e) => onMunicipioChange(e.target.value)}
-          disabled={!estadoId}
-          className="w-full appearance-none rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base font-medium text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-0 disabled:bg-zinc-100 disabled:text-zinc-400"
-        >
-          <option value="">
-            {estadoId ? "Todos los municipios" : "Primero selecciona un estado"}
+    <>
+      <select
+        id="filtro-estado"
+        name={estadoName}
+        value={estadoId}
+        onChange={(e) => onEstadoChange(e.target.value)}
+        className="w-full appearance-none rounded-lg border px-3 py-2 text-sm focus:outline-none"
+        style={{ borderColor: "#bdd9f0", color: "#002858", background: "#fff" }}
+      >
+        <option value="">Estado</option>
+        {estados.map((estado) => (
+          <option key={estado.id} value={estado.id}>
+            {estado.nombre}
           </option>
-          {municipiosDelEstado.map((municipio) => (
-            <option key={municipio.id} value={municipio.id}>
-              {municipio.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+        ))}
+      </select>
+
+      <select
+        id="filtro-municipio"
+        name={municipioName}
+        value={municipioId}
+        onChange={(e) => onMunicipioChange(e.target.value)}
+        disabled={!estadoId}
+        className="w-full appearance-none rounded-lg border px-3 py-2 text-sm focus:outline-none disabled:opacity-50"
+        style={{ borderColor: "#bdd9f0", color: "#002858", background: estadoId ? "#fff" : "#EBF3FB" }}
+      >
+        <option value="">
+          {estadoId ? "Municipio" : "Municipio"}
+        </option>
+        {municipiosDelEstado.map((municipio) => (
+          <option key={municipio.id} value={municipio.id}>
+            {municipio.nombre}
+          </option>
+        ))}
+      </select>
+    </>
   );
 }

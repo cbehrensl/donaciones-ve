@@ -384,7 +384,7 @@ export async function getHomeDataWithFilters(
 }> {
   const errors: DataLoadError[] = [];
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
-  const pageSize = 10;
+  const pageSize = 5;
   const page = Math.max(0, filters.page ?? 0);
   const from = page * pageSize;
   const to = from + pageSize - 1;

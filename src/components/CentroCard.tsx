@@ -53,145 +53,100 @@ export function CentroCard({ centro }: CentroCardProps) {
 
   return (
     <article
-      className="group rounded-xl border-2 p-5 transition-all sm:p-6 hover:shadow-md active:scale-[0.99]"
-      style={{
-        borderColor: SEMAFORO_BORDER[semaforo],
-        background: "#fff",
-      }}
+      className="group rounded-xl border-2 p-3 transition-all hover:shadow-md active:scale-[0.99]"
+      style={{ borderColor: SEMAFORO_BORDER[semaforo], background: "#fff" }}
     >
-      <header className="mb-5">
-        <div className="mb-2 flex items-start justify-between gap-4">
-          <h2 className="text-xl font-black leading-tight sm:text-2xl" style={{ color: "#002858" }}>
+      {/* Header */}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-base font-black leading-tight truncate" style={{ color: "#002858" }}>
             {centro.nombre}
-            {centro.verificado && (
-              <span title="Verificado" className="ml-2 inline-flex items-center text-lg" aria-hidden>
-                <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs text-white" style={{ background: "#0084D0" }}>
-                  ✓
-                </span>
-              </span>
-            )}
           </h2>
-          <div
-            className="flex shrink-0 items-center gap-2 rounded-lg border bg-white/80 px-2 py-1 text-[10px] font-black uppercase tracking-tighter sm:text-xs"
-            style={{ borderColor: SEMAFORO_BORDER[semaforo], color: SEMAFORO_TEXT[semaforo] }}
-          >
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ background: SEMAFORO_DOT_COLOR[semaforo] }}
-            />
-            {SEMAFORO_LABELS[semaforo]}
-          </div>
+          {centro.verificado && (
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] text-white" style={{ background: "#0084D0" }}>✓</span>
+          )}
         </div>
-        <p className="text-sm font-bold tracking-tight" style={{ color: "#0084D0" }}>{municipio}</p>
-        {!centro.verificado ? (
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ background: "#FEF3C7", color: "#92400E" }}>
-            <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "#D97706" }} />
-            PENDIENTE DE VERIFICACIÓN
-          </div>
-        ) : null}
-      </header>
+        <div
+          className="flex shrink-0 items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-black uppercase"
+          style={{ borderColor: SEMAFORO_BORDER[semaforo], color: SEMAFORO_TEXT[semaforo] }}
+        >
+          <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: SEMAFORO_DOT_COLOR[semaforo] }} />
+          {SEMAFORO_LABELS[semaforo]}
+        </div>
+      </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-        <div className="flex items-start gap-3 rounded-xl p-3" style={{ background: "#EBF3FB" }}>
-          <span aria-hidden className="text-lg">📍</span>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#0084D0" }}>Dirección</span>
-            <span className="font-medium leading-snug" style={{ color: "#002858" }}>{centro.direccion}</span>
-            {centro.ubicacion_url ? (
-              <a
-                href={centro.ubicacion_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cta-secondary mt-2 inline-flex w-fit rounded-md border px-2 py-1 text-xs font-bold"
-                style={{ borderColor: "#bdd9f0", background: "#fff", color: "#0084D0" }}
-              >
-                Abrir ubicación en Maps
+      <p className="mb-1 text-xs font-bold" style={{ color: "#0084D0" }}>{municipio}</p>
+
+      {!centro.verificado && (
+        <div className="mb-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#FEF3C7", color: "#92400E" }}>
+          <span className="h-1 w-1 rounded-full animate-pulse" style={{ background: "#D97706" }} />
+          PENDIENTE DE VERIFICACIÓN
+        </div>
+      )}
+
+      {/* Info grid */}
+      <div className="mb-2 grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
+        <div className="flex items-start gap-2 rounded-lg p-2" style={{ background: "#EBF3FB" }}>
+          <span aria-hidden>📍</span>
+          <div>
+            <span className="block font-medium leading-snug" style={{ color: "#002858" }}>{centro.direccion}</span>
+            {centro.ubicacion_url && (
+              <a href={centro.ubicacion_url} target="_blank" rel="noopener noreferrer"
+                className="cta-secondary mt-1 inline-flex rounded border px-2 py-0.5 text-[10px] font-bold"
+                style={{ borderColor: "#bdd9f0", background: "#fff", color: "#0084D0" }}>
+                Ver en Maps
               </a>
-            ) : null}
+            )}
           </div>
         </div>
 
         {centro.contacto && (
-          <div className="flex items-start gap-3 rounded-xl p-3" style={{ background: "#EBF3FB" }}>
-            <span aria-hidden className="text-lg">📞</span>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#0084D0" }}>Contacto</span>
-              <span className="font-bold leading-snug" style={{ color: "#002858" }}>{centro.contacto}</span>
-            </div>
+          <div className="flex items-center gap-2 rounded-lg p-2" style={{ background: "#EBF3FB" }}>
+            <span aria-hidden>📞</span>
+            <span className="font-bold" style={{ color: "#002858" }}>{centro.contacto}</span>
           </div>
         )}
 
         {centro.estado_vialidad && (
-          <div className="flex items-start gap-3 rounded-xl p-3 sm:col-span-2" style={{ background: "#EBF3FB" }}>
-            <span aria-hidden className="text-lg">🚙</span>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#0084D0" }}>Estado de acceso</span>
-              <span className="font-medium leading-snug" style={{ color: "#002858" }}>{centro.estado_vialidad}</span>
-            </div>
+          <div className="flex items-start gap-2 rounded-lg p-2 sm:col-span-2" style={{ background: "#EBF3FB" }}>
+            <span aria-hidden>🚙</span>
+            <span style={{ color: "#002858" }}>{centro.estado_vialidad}</span>
           </div>
         )}
 
         {(disponibilidadFechas || centro.horario_recepcion) && (
-          <div className="flex items-start gap-3 rounded-xl p-3 sm:col-span-2" style={{ background: "#EBF3FB" }}>
-            <span aria-hidden className="text-lg">🕒</span>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#0084D0" }}>
-                Horario de recepción
-              </span>
-              {disponibilidadFechas ? (
-                <span className="font-medium leading-snug" style={{ color: "#002858" }}>
-                  Fechas: {disponibilidadFechas}
-                </span>
-              ) : null}
-              {centro.horario_recepcion ? (
-                <span className="font-medium leading-snug" style={{ color: "#002858" }}>
-                  Horario: {centro.horario_recepcion}
-                </span>
-              ) : null}
+          <div className="flex items-start gap-2 rounded-lg p-2 sm:col-span-2" style={{ background: "#EBF3FB" }}>
+            <span aria-hidden>🕒</span>
+            <div style={{ color: "#002858" }}>
+              {disponibilidadFechas && <span className="block">Fechas: {disponibilidadFechas}</span>}
+              {centro.horario_recepcion && <span className="block">Horario: {centro.horario_recepcion}</span>}
             </div>
           </div>
         )}
       </div>
 
-      <div className="mb-6">
-        <h3 className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: "#0084D0" }}>
-          <span className="h-px w-4" style={{ background: "#bdd9f0" }} />
-          Insumos requeridos
-        </h3>
+      {/* Insumos */}
+      <div className="mb-2">
+        <p className="mb-1 text-[10px] font-black uppercase tracking-widest" style={{ color: "#0084D0" }}>Insumos requeridos</p>
         {necesidades.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {necesidades.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col rounded-xl border px-3 py-2"
-                style={{
-                  background: URGENCIA_BG[item.urgencia],
-                  borderColor: URGENCIA_BORDER[item.urgencia],
-                  color: URGENCIA_COLOR[item.urgencia],
-                }}
-              >
-                <span className="text-xs font-black tracking-tight">{item.tipo_insumo}</span>
-                {item.detalle && (
-                  <span className="mt-0.5 text-[10px] font-medium leading-tight opacity-80">
-                    {item.detalle}
-                  </span>
-                )}
+              <div key={item.id} className="rounded-lg border px-2 py-1"
+                style={{ background: URGENCIA_BG[item.urgencia], borderColor: URGENCIA_BORDER[item.urgencia], color: URGENCIA_COLOR[item.urgencia] }}>
+                <span className="text-[11px] font-black">{item.tipo_insumo}</span>
+                {item.detalle && <span className="ml-1 text-[10px] opacity-75">{item.detalle}</span>}
               </div>
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed p-4 text-center text-sm font-bold" style={{ borderColor: "#bdd9f0", background: "#EBF3FB", color: "#0084D0" }}>
-            Aún no se reportaron insumos específicos. Cualquier donación o
-            apoyo será bien recibido por este centro.
-          </div>
+          <p className="rounded-lg border border-dashed px-3 py-2 text-center text-[11px] font-bold"
+            style={{ borderColor: "#bdd9f0", background: "#EBF3FB", color: "#0084D0" }}>
+            Sin insumos específicos — cualquier donación es bienvenida.
+          </p>
         )}
       </div>
 
-      <CopyTextButton
-        text={plainText}
-        label="Copiar reporte para WhatsApp/SMS"
-      />
+      <CopyTextButton text={plainText} label="Copiar para WhatsApp/SMS" />
     </article>
   );
 }
