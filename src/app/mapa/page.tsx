@@ -10,16 +10,48 @@ export const metadata: Metadata = {
 
 export const revalidate = 15
 
+function isShortUrl(url: string | null): boolean {
+  if (!url) return false
+  try {
+    const { hostname } = new URL(url)
+    return hostname.includes('goo.gl') || hostname.includes('share.google')
+  } catch {
+    return false
+  }
+}
+
+async function resolveUrl(url: string): Promise<string> {
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 4000)
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+    clearTimeout(timer)
+    return res.url || url
+  } catch {
+    return url
+  }
+}
+
 export default async function MapaPage() {
   const centros = await getCentrosAcopio()
 
-  const centrosConCoordenadas: CentroConCoordenadas[] = centros
-    .map(c => {
-      const coords = extractCoordenadas(c.ubicacion_url)
-      if (!coords) return null
-      return { ...c, lat: coords.lat, lng: coords.lng }
-    })
-    .filter((c): c is CentroConCoordenadas => c !== null)
+  const centrosConCoordenadas: CentroConCoordenadas[] = (
+    await Promise.all(
+      centros.map(async (c) => {
+        let url = c.ubicacion_url
+        if (isShortUrl(url)) {
+          url = await resolveUrl(url!)
+        }
+        const coords = extractCoordenadas(url)
+        if (!coords) return null
+        return { ...c, lat: coords.lat, lng: coords.lng }
+      })
+    )
+  ).filter((c): c is CentroConCoordenadas => c !== null)
 
   return (
     <main>
