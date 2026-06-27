@@ -170,6 +170,7 @@ function normalizeCentro(raw: Record<string, unknown>): CentroAcopio {
     nombre: String(raw.nombre),
     direccion: String(raw.direccion),
     municipio_id: String(raw.municipio_id),
+    estado_id: raw.estado_id ? String(raw.estado_id) : null,
     estatus,
     ubicacion_url: raw.ubicacion_url ? String(raw.ubicacion_url) : null,
     contacto: raw.telefono_contacto
