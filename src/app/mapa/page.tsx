@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Mapa de centros — donaciones.ve',
 }
 
-export const revalidate = 60
+export const revalidate = 15
 
 export default async function MapaPage() {
   const centros = await getCentrosAcopio()

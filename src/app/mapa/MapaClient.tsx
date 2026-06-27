@@ -76,7 +76,7 @@ export default function MapaClient({ centros }: MapaClientProps) {
   return (
     <div
       className="flex flex-col md:flex-row"
-      style={{ height: 'calc(100vh - 4rem)' }}
+      style={{ height: '100dvh' }}
     >
       {/* Map area */}
       <div className="flex-1 min-h-[300px] md:min-h-0">
@@ -148,8 +148,7 @@ export default function MapaClient({ centros }: MapaClientProps) {
               {centrosOrdenados.map((centro) => {
                 const isActive = activeId === centro.id
                 const color = getStatusColor(centro.estatus)
-                const municipioNombre = centro.municipios?.nombre
-                const estadoNombre = centro.municipios?.estado?.nombre
+                const municipioNombre = centro.municipios?.nombre ?? ''
 
                 return (
                   <li key={centro.id}>
@@ -169,11 +168,9 @@ export default function MapaClient({ centros }: MapaClientProps) {
                             <p className="font-semibold text-sm text-gray-900 truncate">
                               {centro.nombre}
                             </p>
-                            {(municipioNombre || estadoNombre) && (
+                            {municipioNombre && (
                               <p className="text-xs text-gray-500 truncate">
-                                {[municipioNombre, estadoNombre]
-                                  .filter(Boolean)
-                                  .join(', ')}
+                                {municipioNombre}
                               </p>
                             )}
                           </div>

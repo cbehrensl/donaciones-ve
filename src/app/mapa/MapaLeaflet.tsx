@@ -3,7 +3,7 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CentroConCoordenadas } from '@/lib/types';
 
 // Workaround para el bug de iconos Leaflet con webpack/Next.js
@@ -53,9 +53,10 @@ interface MapControllerProps {
   centros: CentroConCoordenadas[];
   userLocation: { lat: number; lng: number } | null;
   activeId: string | null;
+  markerRefs: React.MutableRefObject<Map<string, L.Marker>>;
 }
 
-function MapController({ centros, userLocation, activeId }: MapControllerProps) {
+function MapController({ centros, userLocation, activeId, markerRefs }: MapControllerProps) {
   const map = useMap();
 
   useEffect(() => {
@@ -63,8 +64,10 @@ function MapController({ centros, userLocation, activeId }: MapControllerProps) 
     const centro = centros.find((c) => c.id === activeId);
     if (centro) {
       map.panTo([centro.lat, centro.lng]);
+      const marker = markerRefs.current.get(activeId);
+      if (marker) marker.openPopup();
     }
-  }, [activeId, centros, map]);
+  }, [activeId, centros, map, markerRefs]);
 
   useEffect(() => {
     if (userLocation === null) return;
@@ -80,6 +83,8 @@ export default function MapaLeaflet({
   activeId,
   onSelectCentro,
 }: MapaLeafletProps) {
+  const markerRefs = useRef<Map<string, L.Marker>>(new Map());
+
   return (
     <MapContainer
       center={[8, -66]}
@@ -91,13 +96,17 @@ export default function MapaLeaflet({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
 
-      <MapController centros={centros} userLocation={userLocation} activeId={activeId} />
+      <MapController centros={centros} userLocation={userLocation} activeId={activeId} markerRefs={markerRefs} />
 
       {centros.map((centro) => (
         <Marker
           key={centro.id}
           position={[centro.lat, centro.lng]}
           icon={createCircleIcon(getMarkerColor(centro.estatus))}
+          ref={(marker) => {
+            if (marker) markerRefs.current.set(centro.id, marker);
+            else markerRefs.current.delete(centro.id);
+          }}
           eventHandlers={{
             click: () => onSelectCentro(centro.id),
           }}

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { CentroCard } from "@/components/CentroCard";
 import { calcularSemafaroGrupo, SEMAFORO_DOT, SEMAFORO_LABELS } from "@/lib/semaforo";
 import type { CentroAcopio } from "@/lib/types";
@@ -13,11 +16,13 @@ export function CentroGrupoEstado({
   centros,
   defaultOpen = false,
 }: CentroGrupoEstadoProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const semaforo = calcularSemafaroGrupo(centros);
 
   return (
     <details
-      open={defaultOpen}
+      open={isOpen}
+      onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
       className="group rounded-2xl border border-zinc-200 bg-white shadow-sm"
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5">
