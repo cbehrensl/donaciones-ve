@@ -47,7 +47,7 @@ export const URGENCIA_STYLES: Record<Urgencia, string> = {
   SATURADO: "bg-green-100 text-green-800 border-green-200",
 };
 
-const SEMAFORO_PRIORITY: Record<SemafaroEstado, number> = {
+export const SEMAFORO_PRIORITY: Record<SemafaroEstado, number> = {
   URGENTE: 4,
   MEDIA: 3,
   SATURADO: 2,

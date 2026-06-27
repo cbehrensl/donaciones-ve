@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CentroGrupoEstado } from "@/components/CentroGrupoEstado";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
-import { calcularSemafaroGrupo } from "@/lib/semaforo";
+import { calcularSemafaroGrupo, SEMAFORO_PRIORITY } from "@/lib/semaforo";
 import type {
   CentroAcopio,
   ContactoEmergencia,
@@ -16,13 +16,6 @@ import type {
   Municipio,
   SemafaroEstado,
 } from "@/lib/types";
-
-const SEMAFORO_PRIORITY: Record<SemafaroEstado, number> = {
-  URGENTE: 4,
-  MEDIA: 3,
-  SATURADO: 2,
-  SIN_DATOS: 1,
-};
 
 interface GrupoEstado {
   estadoId: string;
