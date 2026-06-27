@@ -116,3 +116,8 @@ export interface ModeracionSearchMeta {
   hasNextPage: boolean;
   hasPrevPage: boolean;
 }
+
+export interface CentroConCoordenadas extends CentroAcopio {
+  lat: number;
+  lng: number;
+}
