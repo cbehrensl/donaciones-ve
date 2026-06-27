@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CentroCard } from "@/components/CentroCard";
+import { CentroGrupoEstado } from "@/components/CentroGrupoEstado";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
+import { calcularSemafaroGrupo } from "@/lib/semaforo";
 import type {
   CentroAcopio,
   ContactoEmergencia,
@@ -13,7 +14,62 @@ import type {
   HomeSearchFilters,
   HomeSearchMeta,
   Municipio,
+  SemafaroEstado,
 } from "@/lib/types";
+
+const SEMAFORO_PRIORITY: Record<SemafaroEstado, number> = {
+  URGENTE: 4,
+  MEDIA: 3,
+  SATURADO: 2,
+  SIN_DATOS: 1,
+};
+
+interface GrupoEstado {
+  estadoId: string;
+  nombre: string;
+  centros: CentroAcopio[];
+  semaforo: SemafaroEstado;
+  defaultOpen: boolean;
+}
+
+function agruparCentrosPorEstado(
+  centros: CentroAcopio[],
+  estados: Estado[],
+  hayFiltroActivo: boolean,
+): GrupoEstado[] {
+  const estadosMap = new Map(estados.map((e) => [e.id, e.nombre]));
+  const mapaGrupos = new Map<string, CentroAcopio[]>();
+
+  for (const centro of centros) {
+    const key = centro.estado_id ?? "__sin_estado__";
+    if (!mapaGrupos.has(key)) mapaGrupos.set(key, []);
+    mapaGrupos.get(key)!.push(centro);
+  }
+
+  const grupos: GrupoEstado[] = [];
+  for (const [estadoId, centrosGrupo] of mapaGrupos) {
+    const nombre =
+      estadoId === "__sin_estado__"
+        ? "Sin estado"
+        : (estadosMap.get(estadoId) ?? "Desconocido");
+    const semaforo = calcularSemafaroGrupo(centrosGrupo);
+    grupos.push({
+      estadoId,
+      nombre,
+      centros: centrosGrupo,
+      semaforo,
+      defaultOpen: hayFiltroActivo,
+    });
+  }
+
+  grupos.sort((a, b) => {
+    if (a.estadoId === "__sin_estado__") return 1;
+    if (b.estadoId === "__sin_estado__") return -1;
+    return SEMAFORO_PRIORITY[b.semaforo] - SEMAFORO_PRIORITY[a.semaforo];
+  });
+
+  return grupos;
+}
 
 interface HomeClientProps {
   estados: Estado[];
@@ -82,6 +138,11 @@ export function HomeClient({
   } else if (estadoNombre) {
     textoResultados = ` en ${estadoNombre}`;
   }
+
+  const hayFiltroActivo = Boolean(
+    initialFilters.estadoId || initialFilters.municipioId || initialFilters.q,
+  );
+  const grupos = agruparCentrosPorEstado(centros, estados, hayFiltroActivo);
 
   const telefonosHref = (telefono: string) =>
     `tel:${telefono.replace(/[^\d+]/g, "")}`;
@@ -322,14 +383,19 @@ export function HomeClient({
         </form>
       </div>
 
-      <section id="tour-results" aria-live="polite" className="space-y-4">
-        {centros.length === 0 ? (
+      <section id="tour-results" aria-live="polite" className="space-y-2">
+        {grupos.length === 0 ? (
           <p className="rounded border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
             No hay centros registrados en Supabase para esta ubicación.
           </p>
         ) : (
-          centros.map((centro) => (
-            <CentroCard key={centro.id} centro={centro} />
+          grupos.map((grupo) => (
+            <CentroGrupoEstado
+              key={grupo.estadoId}
+              nombreEstado={grupo.nombre}
+              centros={grupo.centros}
+              defaultOpen={grupo.defaultOpen}
+            />
           ))
         )}
       </section>
