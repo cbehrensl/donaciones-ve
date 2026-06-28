@@ -156,11 +156,27 @@ function ACCaritasContent() {
   const [tab, setTab] = useState(0);
   return (
     <>
-      <TabSelector tabs={["TRANSFERENCIA", "EXTRANJERO"]} active={tab} onChange={setTab} />
+      <TabSelector tabs={["TRANSFERENCIA", "EXTRANJERO","PAYPAL"]} active={tab} onChange={setTab} />
       <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 13 }}>
         {tab === 0 && (<><CopyField label="BANCO" value="MERCANTIL" withLogo /><CopyField label="TITULAR" value="A.C CARITAS DE VENEZUELA" /><CopyField label="TIPO DE CUENTA" value="CORRIENTE" /><CopyField label="NÚMERO DE CUENTA" value="01050699921699059454" /><CopyField label="RIF" value="J-304856970" /></>)}
         {tab === 1 && (<><BankIntermediario /><CopyField label="NOMBRE DE LA CUENTA" value="INSTITUTO PER LE OPERE DI RELIGIONE" /><CopyFieldMultiline label="DIRECCIÓN" value="4 CHASE METRO TECH, 7TH FLOOR, 11245 BROOKLYN NEW YORK, U.S.A" /><div style={{ display: "flex", gap: 10 }}><CopyFieldHalf label="COD. SWIFT" value="CHASUS33XXX" /><CopyFieldHalf label="FED WIRE" value="021000021" /></div><div style={{ display: "flex", gap: 10 }}><CopyFieldHalf label="COD. SWIFT" value="IOPRVAVX" /><CopyFieldHalf label="NÚMERO DE CUENTA" value="41563002" /></div><CopyField label="A FAVOR DE" value="CARITAS DE VENEZUELA" /></>)}
-        
+        {tab === 2 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingTop: 4 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgPaypalLogo} alt="PayPal" style={{ height: 40, width: "auto", objectFit: "contain" }} />
+            <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Copia el siguiente correo </p>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <CopyFieldHalf label="Correo" value="prensacaritasvenezuela@gmail.com" />
+            </div>
+            <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Continua en esta <a target="_blank" href="https://www.paypal.com/ncp/payment/ZSSSATY2E654Y"> URL</a></p>
+            </div>
+          </div>
+        )}
       </div>
       <p style={{ marginTop: 18, fontFamily: hv, fontSize: 13, color: "#7d8189", lineHeight: "18px" }}>No es necesario enviar comprobante.</p>
     </>
@@ -267,7 +283,7 @@ function CaritasColContent() {
       <p style={{ fontFamily: hv, fontSize: 13, color: "#272d3b", lineHeight: "21px", margin: "0 0 16px" }}>
         Cáritas Colombiana es el organismo social de la Iglesia Católica en Colombia con más de 70 años de servicio. Dedicado a brindar ayuda humanitaria y apoyar a las comunidades más vulnerables.
       </p>
-      <TabSelector tabs={["TRANSFERENCIA", "BRE-B", "EXTERIOR", "PSE-NEQUI"]} active={tab} onChange={setTab} />
+      <TabSelector tabs={["TRANSFERENCIA", "BRE-B", "EXTERIOR", "PSE-NEQUI", "PAYPAL"]} active={tab} onChange={setTab} />
       <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 13 }}>
         {tab === 0 && (
           <>
@@ -343,6 +359,23 @@ function CaritasColContent() {
               <img src={imgWompi} alt="QR Wompi" style={{ width: "100%", maxWidth: 240, height: "auto", aspectRatio: "1", objectFit: "contain", borderRadius: 8 }} />
               <span style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "20px", fontWeight: "bold" }}>ESCANEA</span>
               <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Confirma que la cuenta destino sea <span style={{ fontWeight: "bold" }}>SECRETARIADO NACIONAL DE PASTORAL SOCIAL CARITAS COLOMBIANA</span> </p>
+            </div>
+          </div>
+        )}
+        {tab === 4 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingTop: 4 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgPaypalLogo} alt="PayPal" style={{ height: 40, width: "auto", objectFit: "contain" }} />
+            <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Copia el siguiente correo </p>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <CopyFieldHalf label="Correo" value="prensacaritasvenezuela@gmail.com" />
+            </div>
+            <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Continua en esta <a target="_blank" href="https://www.paypal.com/ncp/payment/ZSSSATY2E654Y"> URL</a></p>
             </div>
           </div>
         )}
@@ -712,4 +745,5 @@ export default function DonarDineroPage({ pais = "VE" }: { pais?: string }) {
       </div>
     </>
   );
+  
 }
