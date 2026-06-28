@@ -591,7 +591,7 @@ function DesktopLayoutCO() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer */ }
       <div style={{ position: "relative", background: "linear-gradient(182.21deg, rgb(65,143,222) 20.29%, rgb(141,187,235) 153.32%)", padding: "52px 68px 52px 206px", minHeight: 292, boxSizing: "border-box" }}>
         <p style={{ fontFamily: hv, fontWeight: "bold", fontSize: 32, color: "#001e62", lineHeight: "40px", margin: "0 0 16px", maxWidth: 544 }}>
           Hoy, más que nunca, tu solidaridad puede hacer la diferencia.
