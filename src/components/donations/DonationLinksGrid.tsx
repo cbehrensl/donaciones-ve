@@ -16,7 +16,7 @@ export async function DonationLinksGrid() {
             aria-hidden
             className="inline-block h-3 w-3 shrink-0 rounded-full bg-blue-500"
           />
-          <span className="font-black text-zinc-900">Ayuda con Donaciones</span>
+          <span className="font-black text-zinc-900">Ayuda Económica</span>
           <span className="text-sm font-medium text-zinc-500">
             {links.length} {links.length === 1 ? "organización" : "organizaciones"}
           </span>
@@ -37,7 +37,7 @@ export async function DonationLinksGrid() {
           </svg>
         </div>
       </summary>
-      
+
       <div className="border-t border-zinc-100 p-4 sm:p-5">
         <p className="text-sm text-zinc-600 mb-4">
           Colabora de forma segura a través de estas organizaciones verificadas.
