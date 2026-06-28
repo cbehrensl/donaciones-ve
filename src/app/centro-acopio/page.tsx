@@ -38,6 +38,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       initialFilters={filters}
       searchMeta={searchMeta}
       errors={errors}
+      pais={process.env.FILTRO_PAIS ?? "VE"}
     />
   );
 }

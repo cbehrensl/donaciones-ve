@@ -8,7 +8,7 @@ export function NavBar() {
 
   const links = [
     { href: "/", label: "Donar dinero" },
-    { href: "/centros", label: "Centros de acopio" },
+    { href: "/centro-acopio", label: "Centros de acopio" },
   ];
 
   return (

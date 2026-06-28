@@ -23,6 +23,7 @@ interface HomeClientProps {
   initialFilters: HomeSearchFilters;
   searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
+  pais?: string;
 }
 
 export function HomeClient({
@@ -33,6 +34,7 @@ export function HomeClient({
   initialFilters,
   searchMeta,
   errors,
+  pais = "VE",
 }: HomeClientProps) {
   const [estadoId, setEstadoId] = useState(initialFilters.estadoId);
   const [municipioId, setMunicipioId] = useState(initialFilters.municipioId);
@@ -265,7 +267,7 @@ export function HomeClient({
             No se recibieron estados desde Supabase.
           </p>
         ) : null}
-        <form action="/centros" method="get">
+        <form action="/centro-acopio" method="get">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <input
               id="busqueda-centros"
@@ -285,6 +287,7 @@ export function HomeClient({
               municipioName="municipio"
               onEstadoChange={handleEstadoChange}
               onMunicipioChange={setMunicipioId}
+              hideEstado={pais === "CO"}
             />
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: "#EBF3FB" }}>
@@ -296,7 +299,7 @@ export function HomeClient({
             </p>
             <div className="flex gap-2">
               <Link
-                href="/centros"
+                href="/centro-acopio"
                 className="cta-secondary rounded-lg border px-3 py-1.5 text-xs font-bold"
                 style={{ borderColor: "#bdd9f0", color: "#002858", background: "#EBF3FB" }}
               >
@@ -335,7 +338,7 @@ export function HomeClient({
         <nav className="mt-6 flex items-center justify-between gap-4">
           {searchMeta.hasPrevPage ? (
             <Link
-              href={`/centros?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page - 1}`}
+              href={`/centro-acopio?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page - 1}`}
               className="rounded-lg border px-4 py-2 text-sm font-bold"
               style={{ borderColor: "#bdd9f0", background: "#fff", color: "#002858" }}
             >
@@ -349,7 +352,7 @@ export function HomeClient({
           </span>
           {searchMeta.hasNextPage ? (
             <Link
-              href={`/centros?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page + 1}`}
+              href={`/centro-acopio?q=${initialFilters.q}&estado=${initialFilters.estadoId}&municipio=${initialFilters.municipioId}&page=${searchMeta.page + 1}`}
               className="rounded-lg border px-4 py-2 text-sm font-bold"
               style={{ borderColor: "#bdd9f0", background: "#fff", color: "#002858" }}
             >

@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "donaciones-ve",
+      "runtimeExecutable": "/Users/omarpava/.nvm/versions/node/v22.22.0/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev", "--port", "3000"],
+      "port": 3000,
+      "autoPort": true,
+      "env": {
+        "PATH": "/Users/omarpava/.nvm/versions/node/v22.22.0/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { crearCentroAcopio } from "@/app/centros/nuevo/actions";
+import { crearCentroAcopio } from "@/app/centro-acopio/nuevo/actions";
 import { CopyTextButton } from "@/components/CopyTextButton";
 import type { CrearCentroResult } from "@/lib/types";
 import type { Estado, Municipio } from "@/lib/types";

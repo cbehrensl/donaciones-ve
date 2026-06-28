@@ -33,7 +33,7 @@ export default async function GestionLoginPage({
 
       <p className="mt-6 text-center text-sm text-zinc-600">
         ¿Aún no tienes centro?{" "}
-        <Link href="/centros/nuevo" className="font-semibold underline">
+        <Link href="/centro-acopio/nuevo" className="font-semibold underline">
           Registrar centro de acopio
         </Link>
       </p>
