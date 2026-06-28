@@ -1,7 +1,7 @@
 import { getHomeDataWithFilters } from "@/lib/data";
 import { HomeClient } from "./HomeClient";
 
-export const revalidate = 15;
+export const revalidate = 60;
 
 interface HomePageProps {
   searchParams: Promise<{

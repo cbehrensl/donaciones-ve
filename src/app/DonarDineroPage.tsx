@@ -316,7 +316,8 @@ function CaritasColContent() {
             <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 11, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgQrBreb} alt="QR Bre-B" style={{ width: "100%", maxWidth: 270, height: "auto", borderRadius: 8, display: "block", margin: "0 auto" }} />
-              <span style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "20px" }}>ESCANEA</span>
+              <span style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "20px", fontWeight: "bold" }}>ESCANEA</span>
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Confirma que la cuenta esté a nombre de <span style={{ fontWeight: "bold" }}>DONACIONES CÁRITAS COLOMBIA</span></p>
             </div>
             <CopyField label="CÓDIGO BRE-B" value="0092651552" />
             <a href={imgQrBreb} download="qr-bre-b-caritas-colombia.png" style={{ display: "flex", alignItems: "center", gap: 8, background: "#001e62", color: "white", borderRadius: 12, padding: "10px 20px", fontFamily: hv, fontSize: 14, textDecoration: "none" }}>
@@ -351,7 +352,8 @@ function CaritasColContent() {
             <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgQrPaypalCo} alt="QR PayPal" style={{ width: "100%", maxWidth: 240, height: "auto", aspectRatio: "1", objectFit: "contain", borderRadius: 8 }} />
-              <span style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "20px" }}>ESCANEA</span>
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Confirma que el correo de Paypal sea <span style={{ fontWeight: "bold" }}>prensacaritasvenezuela@gmail.com</span></p>
+              <span style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "20px", fontWeight: "bold" }}>ESCANEA</span>
             </div>
             <p style={{ fontFamily: hv, fontWeight: "bold", fontSize: 14, color: "#001e62", lineHeight: "20px", margin: 0 }}>
               PayPal Cáritas Venezuela

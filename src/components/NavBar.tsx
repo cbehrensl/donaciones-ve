@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export function NavBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    router.prefetch("/");
+    router.prefetch("/centro-acopio");
+  }, [router]);
 
   const links = [
     { href: "/", label: "Donar dinero" },
