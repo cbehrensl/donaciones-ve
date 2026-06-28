@@ -16,7 +16,7 @@ export function DonationCard({ link }: { link: DonationLink }) {
   const imageUrl = link.image_url || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
   return (
-    <div className="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+    <div className="flex flex-col h-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
       <div className="flex justify-center items-center h-32 bg-gray-50 border-b border-gray-100 p-4">
         {imageUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
