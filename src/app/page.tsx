@@ -1,5 +1,6 @@
 import { getHomeDataWithFilters } from "@/lib/data";
 import { HomeClient } from "./HomeClient";
+import { DonationLinksGrid } from "@/components/donations/DonationLinksGrid";
 
 export const revalidate = 15;
 
@@ -28,14 +29,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   } = await getHomeDataWithFilters(filters);
 
   return (
-    <HomeClient
-      estados={estados}
-      municipios={municipios}
-      centros={centros}
-      contactosEmergencia={contactosEmergencia}
-      initialFilters={filters}
-      searchMeta={searchMeta}
-      errors={errors}
-    />
+    <main className="min-h-screen bg-gray-50 flex flex-col">
+      <HomeClient
+        estados={estados}
+        municipios={municipios}
+        centros={centros}
+        contactosEmergencia={contactosEmergencia}
+        initialFilters={filters}
+        searchMeta={searchMeta}
+        errors={errors}
+        donationsSlot={<DonationLinksGrid />}
+      />
+    </main>
   );
 }
