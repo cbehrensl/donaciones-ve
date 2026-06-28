@@ -26,15 +26,15 @@ export function SpotlightTour({
   steps,
   storageKey = DEFAULT_STORAGE_KEY,
 }: SpotlightTourProps) {
-  const [isVisible, setIsVisible] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.localStorage.getItem(storageKey) !== "done";
-  });
+  const [isVisible, setIsVisible] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
+
+  useEffect(() => {
+    if (window.localStorage.getItem(storageKey) !== "done") {
+      setIsVisible(true);
+    }
+  }, [storageKey]);
 
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;

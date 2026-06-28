@@ -2,14 +2,15 @@
 
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { haversineDistancia } from '@/lib/distancia'
 import type { CentroConCoordenadas } from '@/lib/types'
 
 const MapaLeaflet = dynamic(() => import('./MapaLeaflet'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full text-gray-500">
-      Cargando mapa...
+    <div className="flex items-center justify-center h-full bg-zinc-100 text-zinc-500 text-sm">
+      Cargando mapa…
     </div>
   ),
 })
@@ -18,12 +19,9 @@ type CentroConDistancia = CentroConCoordenadas & { distancia?: number }
 
 function getStatusColor(estatus: string | undefined): string {
   switch (estatus) {
-    case 'activo':
-      return '#22c55e'
-    case 'saturado':
-      return '#c2410c'
-    default:
-      return '#6b7280'
+    case 'activo': return '#22c55e'
+    case 'saturado': return '#c2410c'
+    default: return '#6b7280'
   }
 }
 
@@ -36,96 +34,265 @@ export default function MapaClient({ centros }: MapaClientProps) {
   const [selectedRadius, setSelectedRadius] = useState<number | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   function handleEnableLocation() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setLocationError(null)
+        setSheetOpen(true)
       },
-      () => {
-        setLocationError('No se pudo obtener tu ubicación. Verifica los permisos.')
-      },
+      () => setLocationError('No se pudo obtener tu ubicación. Verifica los permisos.'),
     )
   }
 
+  function handleSelectCentro(id: string) {
+    setActiveId(id)
+    setSheetOpen(false)
+  }
+
   const centrosOrdenados = useMemo<CentroConDistancia[]>(() => {
-    const centrosConDistancia: CentroConDistancia[] = centros.map((c) => ({
+    const withDist: CentroConDistancia[] = centros.map((c) => ({
       ...c,
       distancia: userLocation
         ? haversineDistancia(userLocation.lat, userLocation.lng, c.lat, c.lng)
         : undefined,
     }))
-
-    const centrosFiltrados =
+    const filtered =
       selectedRadius != null
-        ? centrosConDistancia.filter(
-            (c) => c.distancia != null && c.distancia <= selectedRadius,
-          )
-        : centrosConDistancia
-
+        ? withDist.filter((c) => c.distancia != null && c.distancia <= selectedRadius)
+        : withDist
     return userLocation
-      ? [...centrosFiltrados].sort(
-          (a, b) => (a.distancia ?? Infinity) - (b.distancia ?? Infinity),
-        )
-      : [...centrosFiltrados].sort((a, b) =>
-          a.nombre.localeCompare(b.nombre, 'es'),
-        )
+      ? [...filtered].sort((a, b) => (a.distancia ?? Infinity) - (b.distancia ?? Infinity))
+      : [...filtered].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   }, [centros, userLocation, selectedRadius])
+
+  // Shared list items — same rendering on both mobile sheet and desktop sidebar
+  const listItems = centrosOrdenados.map((centro) => {
+    const isActive = activeId === centro.id
+    const color = getStatusColor(centro.estatus)
+    const municipio = centro.municipios?.nombre ?? ''
+    return (
+      <li key={centro.id}>
+        <button
+          onClick={() => handleSelectCentro(centro.id)}
+          className={`w-full text-left px-4 py-3 border-b border-zinc-100 transition-colors ${
+            isActive ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'hover:bg-zinc-50 active:bg-zinc-100'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className="flex-shrink-0 w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-zinc-900 truncate">{centro.nombre}</p>
+                {municipio && (
+                  <p className="text-xs text-zinc-500 truncate">{municipio}</p>
+                )}
+              </div>
+            </div>
+            {centro.distancia != null && (
+              <span className="flex-shrink-0 text-xs font-semibold text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5">
+                {centro.distancia.toFixed(1)} km
+              </span>
+            )}
+          </div>
+        </button>
+      </li>
+    )
+  })
+
+  const emptyState = (
+    <p className="text-center text-zinc-400 text-sm py-10">
+      No hay centros en este radio.
+    </p>
+  )
 
   return (
     <div
-      className="flex flex-col md:flex-row"
+      className="relative md:flex md:flex-row overflow-hidden"
       style={{ height: '100dvh' }}
     >
-      {/* Map area */}
-      <div className="flex-1 min-h-[300px] md:min-h-0">
+      {/* Map: absolute fullscreen on mobile, flex-1 on desktop */}
+      <div className="absolute inset-0 z-[500] md:relative md:inset-auto md:flex-1">
         <MapaLeaflet
           centros={centrosOrdenados}
           userLocation={userLocation}
           activeId={activeId}
-          onSelectCentro={setActiveId}
+          onSelectCentro={handleSelectCentro}
         />
       </div>
 
-      {/* Sidebar */}
-      <div className="w-full md:w-80 lg:w-96 flex flex-col border-t md:border-t-0 md:border-l border-gray-200 overflow-hidden bg-white">
-        {/* Header */}
-        <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Centros de Acopio</h2>
-            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-              {centrosOrdenados.length} mostrados
+      {/* ── MOBILE ONLY ─────────────────────────────────────────── */}
+
+      {/* Floating header: back button + counter */}
+      <div className="md:hidden absolute top-3 left-3 z-[1001] flex items-center gap-2">
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-zinc-900 font-bold text-sm px-3 py-2 rounded-full shadow-lg hover:bg-white transition-colors"
+        >
+          ← Inicio
+        </Link>
+        <span className="bg-white/90 backdrop-blur-sm text-zinc-700 text-xs font-semibold px-2.5 py-2 rounded-full shadow-lg">
+          {centrosOrdenados.length} centros
+        </span>
+      </div>
+
+      {/* FAB: geolocation — only when location not enabled AND sheet is collapsed */}
+      {!userLocation && !sheetOpen && (
+        <div className="md:hidden absolute z-[1001] flex flex-col items-center gap-2"
+             style={{ bottom: 'calc(96px + 20px)', left: '50%', transform: 'translateX(-50%)' }}>
+          <button
+            onClick={handleEnableLocation}
+            className="flex items-center gap-2 bg-blue-700 text-white font-bold text-sm px-5 py-3.5 rounded-full shadow-xl active:scale-95 transition-transform whitespace-nowrap"
+          >
+            <span>📍</span> Ver centros cerca de mí
+          </button>
+          {locationError && (
+            <p className="bg-white text-red-600 text-xs font-semibold px-3 py-1.5 rounded-xl shadow text-center max-w-[280px] leading-snug">
+              {locationError}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Bottom sheet */}
+      <div
+        className="md:hidden absolute left-0 right-0 bottom-0 z-[600] bg-white rounded-t-2xl shadow-2xl flex flex-col transition-transform duration-300 ease-out"
+        style={{
+          height: '65dvh',
+          transform: sheetOpen ? 'translateY(0)' : 'translateY(calc(100% - 96px))',
+        }}
+      >
+        {/* Handle row — tap toggles the sheet */}
+        <button
+          onClick={() => setSheetOpen((v) => !v)}
+          className="flex-shrink-0 w-full px-4 pt-3 pb-3 text-left focus:outline-none"
+          aria-label={sheetOpen ? 'Colapsar lista de centros' : 'Expandir lista de centros'}
+        >
+          <div className="mx-auto mb-2.5 w-10 h-1 bg-zinc-300 rounded-full" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-bold text-zinc-900 text-base">Centros de Acopio</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500 bg-zinc-100 rounded-full px-2.5 py-0.5 font-semibold">
+                {centrosOrdenados.length} mostrados
+              </span>
+              <span className="text-zinc-400 text-xs select-none">
+                {sheetOpen ? '▼' : '▲'}
+              </span>
+            </div>
+          </div>
+          {/* Legend — always visible in peek */}
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block flex-shrink-0" />
+              Activo
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium">
+              <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: '#c2410c' }} />
+              Saturado
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium">
+              <span className="w-2.5 h-2.5 rounded-full bg-zinc-400 inline-block flex-shrink-0" />
+              Sin verificar
             </span>
           </div>
-        </div>
+        </button>
 
-        {/* Location / Filter controls */}
-        <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200">
-          {!userLocation ? (
-            <div className="space-y-2">
-              <button
-                onClick={handleEnableLocation}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                📍 Habilitar mi ubicación
-              </button>
-              {locationError && (
-                <p className="text-red-600 text-xs">{locationError}</p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <label htmlFor="radio-filter" className="text-xs text-gray-500 font-medium">
-                Filtrar por distancia
+        {/* Filter controls — only when sheet is expanded */}
+        {sheetOpen && (
+        <div className="flex-shrink-0 px-4 pb-3 border-b border-zinc-100">
+          {userLocation ? (
+            <div className="flex items-center gap-2">
+              <label htmlFor="radius-mobile" className="text-xs text-zinc-500 font-medium whitespace-nowrap">
+                Distancia:
               </label>
               <select
-                id="radio-filter"
+                id="radius-mobile"
                 value={selectedRadius ?? ''}
                 onChange={(e) =>
                   setSelectedRadius(e.target.value === '' ? null : Number(e.target.value))
                 }
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-1.5 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos</option>
+                <option value="5">5 km</option>
+                <option value="10">10 km</option>
+                <option value="25">25 km</option>
+                <option value="50">50 km</option>
+              </select>
+            </div>
+          ) : (
+            <button
+              onClick={handleEnableLocation}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 text-white rounded-xl font-bold text-sm active:scale-[0.98] transition-transform"
+            >
+              📍 Habilitar mi ubicación
+            </button>
+          )}
+          {locationError && (
+            <p className="mt-1.5 text-red-600 text-xs font-medium">{locationError}</p>
+          )}
+        </div>
+        )}
+
+        {/* List */}
+        <div className="overflow-y-auto flex-1 overscroll-contain">
+          {centrosOrdenados.length === 0 ? emptyState : <ul>{listItems}</ul>}
+        </div>
+        {/* Legal attribution (replaces Leaflet control) */}
+        <p className="flex-shrink-0 py-1.5 text-center text-[9px] text-zinc-300">
+          © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400">OpenStreetMap</a>{' '}· <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400">CARTO</a>
+        </p>
+      </div>
+
+      {/* ── DESKTOP ONLY ────────────────────────────────────────── */}
+      <div className="hidden md:flex flex-col w-80 lg:w-96 border-l border-zinc-200 bg-white z-[500]">
+        {/* Header */}
+        <div className="flex-shrink-0 px-4 py-3 border-b border-zinc-200">
+          <div className="flex items-center justify-between mb-2">
+            <Link
+              href="/"
+              className="text-xs font-bold text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1"
+            >
+              ← Inicio
+            </Link>
+            <span className="text-xs text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-full font-semibold">
+              {centrosOrdenados.length} mostrados
+            </span>
+          </div>
+          <h2 className="font-bold text-zinc-900">Centros de Acopio</h2>
+        </div>
+
+        {/* Filter controls */}
+        <div className="flex-shrink-0 px-4 py-3 border-b border-zinc-200">
+          {!userLocation ? (
+            <div className="space-y-2">
+              <button
+                onClick={handleEnableLocation}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 transition-colors text-sm font-bold"
+              >
+                📍 Ver centros cerca de mí
+              </button>
+              {locationError && (
+                <p className="text-red-600 text-xs font-medium">{locationError}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <label htmlFor="radius-desktop" className="text-xs text-zinc-500 font-medium">
+                Filtrar por distancia
+              </label>
+              <select
+                id="radius-desktop"
+                value={selectedRadius ?? ''}
+                onChange={(e) =>
+                  setSelectedRadius(e.target.value === '' ? null : Number(e.target.value))
+                }
+                className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Todos</option>
                 <option value="5">5 km</option>
@@ -137,57 +304,13 @@ export default function MapaClient({ centros }: MapaClientProps) {
           )}
         </div>
 
-        {/* Scrollable list */}
+        {/* List */}
         <div className="overflow-y-auto flex-1">
-          {centrosOrdenados.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-8">
-              No hay centros en este radio.
-            </p>
-          ) : (
-            <ul>
-              {centrosOrdenados.map((centro) => {
-                const isActive = activeId === centro.id
-                const color = getStatusColor(centro.estatus)
-                const municipioNombre = centro.municipios?.nombre ?? ''
-
-                return (
-                  <li key={centro.id}>
-                    <button
-                      onClick={() => setActiveId(centro.id)}
-                      className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        isActive ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 min-w-0">
-                          <span
-                            className="mt-1 flex-shrink-0 w-3 h-3 rounded-full"
-                            style={{ backgroundColor: color }}
-                          />
-                          <div className="min-w-0">
-                            <p className="font-semibold text-sm text-gray-900 truncate">
-                              {centro.nombre}
-                            </p>
-                            {municipioNombre && (
-                              <p className="text-xs text-gray-500 truncate">
-                                {municipioNombre}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {centro.distancia != null && (
-                          <span className="flex-shrink-0 text-xs text-gray-500 mt-0.5">
-                            {centro.distancia.toFixed(1)} km
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          {centrosOrdenados.length === 0 ? emptyState : <ul>{listItems}</ul>}
         </div>
+        <p className="flex-shrink-0 py-1.5 text-center text-[9px] text-zinc-300 border-t border-zinc-100">
+          © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400">OpenStreetMap</a>{' '}· <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400">CARTO</a>
+        </p>
       </div>
     </div>
   )
