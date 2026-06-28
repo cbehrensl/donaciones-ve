@@ -148,10 +148,13 @@ export async function getEstados(): Promise<Estado[]> {
     return [];
   }
 
-  const { data, error } = await supabase
-    .from("estados")
-    .select("id, nombre")
-    .order("nombre");
+  let query = supabase.from("estados").select("id, nombre").order("nombre");
+
+  if (FILTRO_PAIS) {
+    query = query.eq("country", FILTRO_PAIS);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error cargando estados:", error.message);
@@ -244,6 +247,10 @@ export async function getMunicipios(estadoId?: string): Promise<Municipio[]> {
 
   if (estadoId) {
     query = query.eq("estado_id", estadoId);
+  }
+
+  if (FILTRO_PAIS) {
+    query = query.eq("country", FILTRO_PAIS);
   }
 
   const { data, error } = await query;
@@ -341,9 +348,11 @@ const getCachedEstados = unstable_cache(
   async () => {
     const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
     if (!supabase) return { data: null, error: new Error("No supabase client") };
-    return supabase.from("estados").select("id, nombre").order("nombre");
+    let query = supabase.from("estados").select("id, nombre").order("nombre");
+    if (FILTRO_PAIS) query = query.eq("country", FILTRO_PAIS);
+    return query;
   },
-  ["estados"],
+  [`estados-${FILTRO_PAIS ?? "all"}`],
   { revalidate: 3600 },
 );
 
@@ -351,9 +360,11 @@ const getCachedMunicipios = unstable_cache(
   async () => {
     const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
     if (!supabase) return { data: null, error: new Error("No supabase client") };
-    return supabase.from("municipios").select("id, nombre, estado_id").order("nombre");
+    let query = supabase.from("municipios").select("id, nombre, estado_id").order("nombre");
+    if (FILTRO_PAIS) query = query.eq("country", FILTRO_PAIS);
+    return query;
   },
-  ["municipios"],
+  [`municipios-${FILTRO_PAIS ?? "all"}`],
   { revalidate: 3600 },
 );
 
