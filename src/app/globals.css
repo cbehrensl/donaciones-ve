@@ -42,3 +42,64 @@ input,
 textarea {
   font: inherit;
 }
+
+/* Map marker animations */
+@keyframes marker-ring-pulse {
+  0% { transform: scale(0.7); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.marker-pulse {
+  position: absolute;
+  border-radius: 50%;
+  animation: marker-ring-pulse 1.4s ease-out infinite;
+}
+
+.user-marker-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #3b82f6;
+  animation: marker-ring-pulse 2s ease-out infinite;
+}
+
+/* Leaflet popup overrides — ensure popups float above mobile bottom sheet */
+.leaflet-pane.leaflet-popup-pane {
+  z-index: 1100 !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
+  padding: 12px 16px !important;
+  position: relative !important;
+}
+.leaflet-popup-close-button {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 20px !important;
+  line-height: 24px !important;
+  text-align: center !important;
+  color: #9ca3af !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding-right: 20px !important;
+}
+
+/* Compact attribution on mobile — kept for desktop fallback */
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  padding: 1px 5px !important;
+  opacity: 0.5;
+  border-radius: 4px 0 0 0 !important;
+  z-index: 499 !important;
+}
+.leaflet-control-attribution a {
+  text-decoration: none !important;
+}

@@ -36,6 +36,7 @@ export interface CentroAcopio {
   nombre: string;
   direccion: string;
   municipio_id: string;
+  estado_id: string | null;
   estatus?: string;
   ubicacion_url: string | null;
   contacto: string | null;
@@ -114,4 +115,9 @@ export interface ModeracionSearchMeta {
   pageSize: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+}
+
+export interface CentroConCoordenadas extends CentroAcopio {
+  lat: number;
+  lng: number;
 }

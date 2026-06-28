@@ -73,7 +73,7 @@ function getEstatusClass(estatus?: string): string {
 export default async function ModeracionPage({
   searchParams,
 }: ModeracionPageProps) {
-  const PAGE_SIZE = 60;
+  const PAGE_SIZE = 20;
   const params = await searchParams;
   const token = params.token?.trim() ?? "";
   const textoFiltro = params.q?.trim().toLowerCase() ?? "";
@@ -253,575 +253,487 @@ export default async function ModeracionPage({
       ) : (
         <SnackbarShell>
         <section className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-6 lg:gap-3">
+            <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Total
               </p>
-              <p className="mt-2 text-3xl font-black text-zinc-900">
+              <p className="mt-1 text-2xl font-black tabular-nums text-zinc-900 lg:text-3xl">
                 {resumen.total}
               </p>
             </div>
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                 Visibles
               </p>
-              <p className="mt-2 text-3xl font-black text-emerald-900">
+              <p className="mt-1 text-2xl font-black tabular-nums text-emerald-900 lg:text-3xl">
                 {resumen.visibles}
               </p>
             </div>
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-800">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
                 Pendientes
               </p>
-              <p className="mt-2 text-3xl font-black text-amber-900">
+              <p className="mt-1 text-2xl font-black tabular-nums text-amber-900 lg:text-3xl">
                 {resumen.pendientes}
               </p>
             </div>
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-blue-800">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
                 Verificados
               </p>
-              <p className="mt-2 text-3xl font-black text-blue-900">
+              <p className="mt-1 text-2xl font-black tabular-nums text-blue-900 lg:text-3xl">
                 {resumen.verificados}
               </p>
             </div>
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-red-800">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-red-700">
                 Urgencias
               </p>
-              <p className="mt-2 text-3xl font-black text-red-900">
+              <p className="mt-1 text-2xl font-black tabular-nums text-red-900 lg:text-3xl">
                 {resumen.urgencias}
               </p>
             </div>
-            <div className="rounded-2xl border border-zinc-300 bg-zinc-100 p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-zinc-600">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                 Ocultos
               </p>
-              <p className="mt-2 text-3xl font-black text-zinc-900">
+              <p className="mt-1 text-2xl font-black tabular-nums text-zinc-700 lg:text-3xl">
                 {resumen.ocultos}
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-wide text-zinc-700">
-                Salud del directorio
-              </h2>
-              <p className="mt-3 text-3xl font-black text-zinc-900">
-                {tasaVerificacion}%
-              </p>
-              <p className="mt-1 text-sm text-zinc-600">
-                de centros visibles están verificados.
-              </p>
-              <p className="mt-3 text-sm text-zinc-600">
-                Centros con necesidades reportadas:{" "}
-                <strong>{centrosConNecesidades.length}</strong>. Sin necesidades:
-                {" "}
-                <strong>{centrosSinNecesidades}</strong>.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-wide text-zinc-700">
-                Foco territorial
-              </h2>
-              {municipiosPendientes.length > 0 ? (
-                <ul className="mt-3 space-y-2 text-sm text-zinc-700">
-                  {municipiosPendientes.map(([municipio, total]) => (
-                    <li key={municipio} className="flex justify-between gap-3">
-                      <span>{municipio}</span>
-                      <strong>{total} pendiente{total === 1 ? "" : "s"}</strong>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm text-zinc-600">
-                  No hay centros pendientes por municipio.
+          <details className="rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-black uppercase tracking-wide text-zinc-700">
+              <span>Resumen e insights</span>
+              <span className="text-xs font-semibold normal-case tracking-normal text-zinc-500">
+                {tasaVerificacion}% verificado · {necesidadesUrgentes} urgentes · {centrosPendientes.length} pendientes
+              </span>
+            </summary>
+            <div className="grid gap-4 border-t border-zinc-100 p-4 lg:grid-cols-3">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wide text-zinc-500">
+                  Salud del directorio
+                </h3>
+                <p className="mt-2 text-2xl font-black text-zinc-900">
+                  {tasaVerificacion}%
                 </p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-wide text-zinc-700">
-                Insumos críticos
-              </h2>
-              {insumosUrgentes.length > 0 ? (
-                <ul className="mt-3 space-y-2 text-sm text-zinc-700">
-                  {insumosUrgentes.map(([insumo, total]) => (
-                    <li key={insumo} className="flex justify-between gap-3">
-                      <span>{insumo}</span>
-                      <strong>{total} urgente{total === 1 ? "" : "s"}</strong>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm text-zinc-600">
-                  No hay insumos marcados como urgentes.
+                <p className="mt-1 text-sm text-zinc-600">
+                  verificados. Con necesidades:{" "}
+                  <strong>{centrosConNecesidades.length}</strong>. Sin:{" "}
+                  <strong>{centrosSinNecesidades}</strong>.
                 </p>
-              )}
+              </div>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wide text-zinc-500">
+                  Foco territorial
+                </h3>
+                {municipiosPendientes.length > 0 ? (
+                  <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+                    {municipiosPendientes.map(([municipio, total]) => (
+                      <li key={municipio} className="flex justify-between gap-2">
+                        <span>{municipio}</span>
+                        <strong className="text-amber-800">{total}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-zinc-500">Sin pendientes.</p>
+                )}
+              </div>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wide text-zinc-500">
+                  Insumos críticos
+                </h3>
+                {insumosUrgentes.length > 0 ? (
+                  <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+                    {insumosUrgentes.map(([insumo, total]) => (
+                      <li key={insumo} className="flex justify-between gap-2">
+                        <span>{insumo}</span>
+                        <strong className="text-red-700">{total}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-zinc-500">Sin urgentes.</p>
+                )}
+              </div>
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm">
-            <h2 className="mb-2 font-black uppercase tracking-wide">
-              Conclusión rápida
-            </h2>
-            <p>
-              Prioriza verificar los <strong>{centrosPendientes.length}</strong>{" "}
-              centros pendientes, revisar los <strong>{necesidadesUrgentes}</strong>{" "}
-              insumos urgentes y completar información de los{" "}
-              <strong>{centrosSinNecesidades}</strong> centros sin necesidades
-              reportadas en esta página de resultados.
-            </p>
-          </div>
+          </details>
 
           <form
             method="get"
-            className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+            className="sticky top-0 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 shadow-sm backdrop-blur-sm"
           >
             <input type="hidden" name="token" value={token} />
             <input type="hidden" name="page" value="1" />
-            <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-zinc-700">
-              Filtrar centros
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr_1fr_auto]">
-              <label className="text-sm font-bold text-zinc-700">
-                Buscar
-                <input
-                  name="q"
-                  type="search"
-                  defaultValue={params.q ?? ""}
-                  placeholder="Nombre, dirección, responsable, horario..."
-                  className="mt-1 w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2 text-base"
-                />
-              </label>
-
-              <label className="text-sm font-bold text-zinc-700">
-                Estatus
-                <select
-                  name="estatus"
-                  defaultValue={estatusFiltro}
-                  className="mt-1 w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2 text-base"
-                >
-                  {ESTATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="text-sm font-bold text-zinc-700">
-                Verificación
-                <select
-                  name="verificacion"
-                  defaultValue={verificacionFiltro}
-                  className="mt-1 w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2 text-base"
-                >
-                  {VERIFICACION_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
+            <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1fr_auto]">
+              <input
+                name="q"
+                type="search"
+                defaultValue={params.q ?? ""}
+                placeholder="Buscar nombre, dirección, responsable..."
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              />
+              <select
+                name="estatus"
+                defaultValue={estatusFiltro}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              >
+                {ESTATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="verificacion"
+                defaultValue={verificacionFiltro}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              >
+                {VERIFICACION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="submit"
-                className="self-end rounded-lg bg-blue-800 px-4 py-2.5 text-base font-bold text-white shadow-sm hover:bg-blue-900"
+                className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-900"
               >
-                Aplicar
+                Filtrar
               </button>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600">
-              <p>
-                Mostrando <strong>{centrosFiltrados.length}</strong> centros en la
-                página <strong>{page}</strong>.
-              </p>
-              <Link href={clearHref} className="text-sm font-bold text-zinc-700 underline">
-                Limpiar filtros
-              </Link>
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <Link
-                href={prevHref}
-                aria-disabled={!meta.hasPrevPage}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-bold ${
-                  meta.hasPrevPage
-                    ? "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
-                    : "pointer-events-none border-zinc-200 bg-zinc-100 text-zinc-400"
-                }`}
-              >
-                ← Anterior
-              </Link>
-              <Link
-                href={nextHref}
-                aria-disabled={!meta.hasNextPage}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-bold ${
-                  meta.hasNextPage
-                    ? "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
-                    : "pointer-events-none border-zinc-200 bg-zinc-100 text-zinc-400"
-                }`}
-              >
-                Siguiente →
-              </Link>
-              {meta.hasNextPage ? (
-                <span className="text-xs text-zinc-500">
-                  Hay más resultados disponibles.
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
+              <div className="flex items-center gap-3">
+                <span>
+                  <strong className="text-zinc-700">{centrosFiltrados.length}</strong> centros · pág. <strong className="text-zinc-700">{page}</strong>
                 </span>
-              ) : null}
+                <Link href={clearHref} className="font-semibold text-blue-700 hover:underline">
+                  Limpiar
+                </Link>
+              </div>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={prevHref}
+                  aria-disabled={!meta.hasPrevPage}
+                  className={`rounded-md border px-2.5 py-1 text-xs font-bold ${
+                    meta.hasPrevPage
+                      ? "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      : "pointer-events-none border-zinc-100 text-zinc-300"
+                  }`}
+                >
+                  ←
+                </Link>
+                <Link
+                  href={nextHref}
+                  aria-disabled={!meta.hasNextPage}
+                  className={`rounded-md border px-2.5 py-1 text-xs font-bold ${
+                    meta.hasNextPage
+                      ? "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      : "pointer-events-none border-zinc-100 text-zinc-300"
+                  }`}
+                >
+                  →
+                </Link>
+              </div>
             </div>
           </form>
 
           {centrosFiltrados.length === 0 ? (
-            <p className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+            <p className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500">
               No hay centros que coincidan con este filtro.
             </p>
           ) : (
-            centrosFiltrados.map((centro) => {
+            <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white shadow-sm">
+            {centrosFiltrados.map((centro) => {
               const semaforo: SemafaroEstado = calcularSemafaro(
                 centro.necesidades ?? [],
               );
               const estaOculto = centro.estatus === "cerrado";
+              const necesidades = centro.necesidades ?? [];
+              const urgentCount = necesidades.filter(n => n.urgencia === "URGENTE").length;
 
               return (
                 <article
                   key={centro.id}
-                  className={`rounded-2xl border bg-white p-4 shadow-sm ${
-                    estaOculto
-                      ? "border-zinc-300 bg-zinc-50 opacity-90"
-                      : centro.verificado
-                      ? "border-blue-200"
-                      : "border-amber-300 ring-1 ring-amber-100"
-                  }`}
+                  className={`${estaOculto ? "bg-zinc-50/50" : ""}`}
                 >
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-black text-zinc-900">
+                  {/* Compact header row — always visible */}
+                  <div className="flex flex-wrap items-start gap-x-3 gap-y-1 px-4 py-3">
+                    <span
+                      aria-hidden
+                      className={`mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${SEMAFORO_DOT[semaforo]}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <h2 className={`text-sm font-bold ${estaOculto ? "text-zinc-400 line-through" : "text-zinc-900"}`}>
                           {centro.nombre}
                         </h2>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                          className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                             centro.verificado
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-amber-100 text-amber-900"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-amber-100 text-amber-800"
                           }`}
                         >
                           {centro.verificado ? "Verificado" : "Pendiente"}
                         </span>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${getEstatusClass(centro.estatus)}`}
+                          className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${getEstatusClass(centro.estatus)}`}
                         >
                           {getEstatusLabel(centro.estatus)}
                         </span>
+                        {urgentCount > 0 ? (
+                          <span className="inline-flex rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-red-700">
+                            {urgentCount} urgente{urgentCount > 1 ? "s" : ""}
+                          </span>
+                        ) : null}
                       </div>
-                      <p className="text-sm text-zinc-600">
-                        {centro.municipios?.nombre ?? "Sin municipio"} ·{" "}
-                        {centro.direccion}
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {centro.municipios?.nombre ?? "Sin municipio"} · {centro.direccion}
+                        {centro.horario_recepcion ? ` · ${centro.horario_recepcion}` : ""}
                       </p>
-                      {centro.fecha_inicio_recepcion ||
-                      centro.fecha_fin_recepcion ||
-                      centro.horario_recepcion ? (
-                        <p className="mt-1 text-xs font-semibold text-zinc-700">
-                          {centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion
-                            ? `Recepción: ${centro.fecha_inicio_recepcion ?? "..."} a ${centro.fecha_fin_recepcion ?? "..."}`
-                            : null}
-                          {centro.horario_recepcion
-                            ? `${centro.fecha_inicio_recepcion || centro.fecha_fin_recepcion ? " · " : ""}Horario: ${centro.horario_recepcion}`
-                            : null}
-                        </p>
-                      ) : null}
                     </div>
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <span
-                        aria-hidden
-                        className={`inline-block h-3 w-3 rounded-full ${SEMAFORO_DOT[semaforo]}`}
-                      />
-                      {SEMAFORO_LABELS[semaforo]}
-                    </div>
-                  </div>
-
-                  {!estaOculto ? (
-                    <details className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50">
-                      <summary className="cursor-pointer px-3 py-2 text-sm font-black uppercase tracking-wide text-zinc-700">
-                        Administrar datos del centro
-                      </summary>
-                      <SnackbarForm
-                        action={actualizarDetallesCentroModeracion}
-                        className="grid gap-3 border-t border-zinc-200 p-3"
-                      >
-                        <input type="hidden" name="token" value={token} />
-                        <input type="hidden" name="centroId" value={centro.id} />
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <label className="text-sm font-bold text-zinc-700">
-                            Nombre
-                            <input
-                              name="nombre"
-                              defaultValue={centro.nombre}
-                              required
-                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                            />
-                          </label>
-                          <label className="text-sm font-bold text-zinc-700">
-                            Contacto público
-                            <input
-                              name="contacto"
-                              defaultValue={centro.contacto ?? ""}
-                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                            />
-                          </label>
-                        </div>
-                        <label className="text-sm font-bold text-zinc-700">
-                          Dirección
-                          <input
-                            name="direccion"
-                            defaultValue={centro.direccion}
-                            required
-                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                          />
-                        </label>
-                        <label className="text-sm font-bold text-zinc-700">
-                          Link de ubicación en Maps
-                          <input
-                            name="ubicacion_url"
-                            type="url"
-                            defaultValue={centro.ubicacion_url ?? ""}
-                            placeholder="https://maps.google.com/..."
-                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                          />
-                        </label>
-                        <label className="text-sm font-bold text-zinc-700">
-                          Estado de vialidad
-                          <input
-                            name="vialidad"
-                            defaultValue={centro.estado_vialidad ?? ""}
-                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                          />
-                        </label>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <label className="text-sm font-bold text-zinc-700">
-                            Fecha inicio de recepción
-                            <input
-                              name="fecha_inicio_recepcion"
-                              type="date"
-                              defaultValue={centro.fecha_inicio_recepcion ?? ""}
-                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                            />
-                          </label>
-                          <label className="text-sm font-bold text-zinc-700">
-                            Fecha fin de recepción
-                            <input
-                              name="fecha_fin_recepcion"
-                              type="date"
-                              defaultValue={centro.fecha_fin_recepcion ?? ""}
-                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                            />
-                          </label>
-                        </div>
-                        <label className="text-sm font-bold text-zinc-700">
-                          Horario de recepción
-                          <input
-                            name="horario_recepcion"
-                            defaultValue={centro.horario_recepcion ?? ""}
-                            placeholder="Ej. Lunes a sábado 8:00 a.m. a 5:00 p.m."
-                            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                          />
-                        </label>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <label className="text-sm font-bold text-zinc-700">
-                            Responsable
-                            <input
-                              name="responsable_nombre"
-                              defaultValue={centro.responsable_nombre ?? ""}
-                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                            />
-                          </label>
-                          <label className="text-sm font-bold text-zinc-700">
-                            Tel. responsable
-                            <input
-                              name="responsable_telefono"
-                              defaultValue={centro.responsable_telefono ?? ""}
-                              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-                            />
-                          </label>
-                        </div>
-                        <button
-                          type="submit"
-                          className="w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-bold text-white sm:w-auto"
-                        >
-                          Guardar datos del centro
-                        </button>
-                      </SnackbarForm>
-                    </details>
-                  ) : null}
-
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {!estaOculto ? (
-                      <>
-                        <SnackbarForm action={actualizarVerificacion}>
-                          <input type="hidden" name="token" value={token} />
-                          <input type="hidden" name="centroId" value={centro.id} />
-                          <input
-                            type="hidden"
-                            name="verificado"
-                            value={centro.verificado ? "false" : "true"}
-                          />
-                          <button
-                            type="submit"
-                            className={`rounded-lg px-3 py-2 text-sm font-bold ${
-                              centro.verificado
-                                ? "border border-zinc-300 bg-white text-zinc-800"
-                                : "bg-blue-800 text-white shadow-sm hover:bg-blue-900"
-                            }`}
-                          >
-                            {centro.verificado
-                              ? "Marcar como pendiente"
-                              : "Aprobar centro"}
-                          </button>
-                        </SnackbarForm>
-
-                        <SnackbarForm action={ocultarCentro}>
-                          <input type="hidden" name="token" value={token} />
-                          <input type="hidden" name="centroId" value={centro.id} />
-                          <button
-                            type="submit"
-                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 hover:bg-red-100"
-                          >
-                            Ocultar centro
-                          </button>
-                        </SnackbarForm>
-                      </>
-                    ) : (
-                      <SnackbarForm action={mostrarCentro}>
-                        <input type="hidden" name="token" value={token} />
-                        <input type="hidden" name="centroId" value={centro.id} />
-                        <button
-                          type="submit"
-                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100"
-                        >
-                          Volver a mostrar
-                        </button>
-                      </SnackbarForm>
-                    )}
-                  </div>
-
-                  {!estaOculto ? (
-                    <SnackbarForm
-                      action={agregarNecesidadModeracion}
-                      className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3"
-                    >
-                      <input type="hidden" name="token" value={token} />
-                      <input type="hidden" name="centroId" value={centro.id} />
-                      <p className="mb-3 text-sm font-black uppercase tracking-wide text-blue-900">
-                        Agregar insumo
-                      </p>
-                      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-                        <select
-                          name="categoriaId"
-                          className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold"
-                          required
-                        >
-                          <option value="">Selecciona insumo</option>
-                          {categoriasInsumo.map((categoria) => (
-                            <option key={categoria.id} value={categoria.id}>
-                              {categoria.nombre}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          name="urgencia"
-                          defaultValue="MEDIA"
-                          className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold"
-                        >
-                          <option value="URGENTE">Urgente</option>
-                          <option value="MEDIA">Media</option>
-                          <option value="SATURADO">Saturado</option>
-                        </select>
-                        <button
-                          type="submit"
-                          className="rounded-lg bg-blue-800 px-3 py-2 text-sm font-bold text-white"
-                        >
-                          Agregar
-                        </button>
-                      </div>
-                      <input
-                        name="detalle"
-                        placeholder="Detalle opcional: cantidad, presentación, prioridad..."
-                        className="mt-2 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm"
-                      />
-                    </SnackbarForm>
-                  ) : null}
-
-                  {(centro.necesidades ?? []).length === 0 ? (
-                    <p className="text-sm text-zinc-600">
-                      Sin necesidades registradas.
-                    </p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {(centro.necesidades ?? []).map((necesidad) => (
-                        <li
-                          key={necesidad.id}
-                          className="rounded border border-zinc-100 bg-zinc-50 p-3"
-                        >
-                          <p className="mb-2 text-sm">
-                            <strong>{necesidad.tipo_insumo}</strong>
-                            {necesidad.detalle ? `: ${necesidad.detalle}` : ""}
-                          </p>
-                          <SnackbarForm
-                            action={actualizarUrgencia}
-                            className="flex flex-wrap items-center gap-2"
-                          >
-                            <input type="hidden" name="token" value={token} />
-                            <input
-                              type="hidden"
-                              name="necesidadId"
-                              value={necesidad.id}
-                            />
-                            <label htmlFor={`urgencia-${necesidad.id}`} className="text-sm">
-                              Urgencia
-                            </label>
-                            <select
-                              id={`urgencia-${necesidad.id}`}
-                              name="urgencia"
-                              defaultValue={necesidad.urgencia}
-                              className="rounded border border-zinc-300 bg-white px-2 py-1 text-sm"
-                            >
-                              <option value="URGENTE">URGENTE</option>
-                              <option value="MEDIA">MEDIA</option>
-                              <option value="SATURADO">SATURADO</option>
-                            </select>
-                            <button
-                              type="submit"
-                              className="rounded bg-zinc-900 px-3 py-1 text-sm text-white"
-                            >
-                              Guardar
-                            </button>
-                          </SnackbarForm>
-                          <SnackbarForm action={eliminarNecesidadModeracion}>
+                    {/* Quick actions */}
+                    <div className="flex shrink-0 items-center gap-1">
+                      {!estaOculto ? (
+                        <>
+                          <SnackbarForm action={actualizarVerificacion}>
                             <input type="hidden" name="token" value={token} />
                             <input type="hidden" name="centroId" value={centro.id} />
                             <input
                               type="hidden"
-                              name="necesidadId"
-                              value={necesidad.id}
+                              name="verificado"
+                              value={centro.verificado ? "false" : "true"}
                             />
                             <button
                               type="submit"
-                              className="rounded border border-red-200 bg-red-50 px-3 py-1 text-sm font-bold text-red-800"
+                              className={`rounded-md px-2.5 py-1 text-xs font-bold ${
+                                centro.verificado
+                                  ? "border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                                  : "bg-blue-700 text-white shadow-sm hover:bg-blue-800"
+                              }`}
                             >
-                              Quitar
+                              {centro.verificado ? "Quitar verificación" : "Aprobar"}
                             </button>
                           </SnackbarForm>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                          <SnackbarForm action={ocultarCentro}>
+                            <input type="hidden" name="token" value={token} />
+                            <input type="hidden" name="centroId" value={centro.id} />
+                            <button
+                              type="submit"
+                              className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-bold text-red-700 hover:bg-red-50"
+                            >
+                              Ocultar
+                            </button>
+                          </SnackbarForm>
+                        </>
+                      ) : (
+                        <SnackbarForm action={mostrarCentro}>
+                          <input type="hidden" name="token" value={token} />
+                          <input type="hidden" name="centroId" value={centro.id} />
+                          <button
+                            type="submit"
+                            className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
+                          >
+                            Mostrar
+                          </button>
+                        </SnackbarForm>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expandable details */}
+                  {!estaOculto ? (
+                    <details className="border-t border-zinc-50">
+                      <summary className="cursor-pointer px-4 py-2 text-xs font-bold uppercase tracking-wide text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600">
+                        Gestionar · {necesidades.length} insumo{necesidades.length !== 1 ? "s" : ""}
+                      </summary>
+                      <div className="space-y-3 px-4 pb-4">
+                        {/* Needs list */}
+                        {necesidades.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-zinc-100 text-left text-xs font-bold uppercase tracking-wide text-zinc-400">
+                                  <th className="pb-1.5 pr-3">Insumo</th>
+                                  <th className="pb-1.5 pr-3">Urgencia</th>
+                                  <th className="pb-1.5"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-zinc-50">
+                                {necesidades.map((necesidad) => (
+                                  <tr key={necesidad.id} className="group">
+                                    <td className="py-1.5 pr-3">
+                                      <span className="font-semibold text-zinc-800">{necesidad.tipo_insumo}</span>
+                                      {necesidad.detalle ? (
+                                        <span className="ml-1 text-xs text-zinc-400">{necesidad.detalle}</span>
+                                      ) : null}
+                                    </td>
+                                    <td className="py-1.5 pr-3">
+                                      <SnackbarForm
+                                        action={actualizarUrgencia}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <input type="hidden" name="token" value={token} />
+                                        <input type="hidden" name="necesidadId" value={necesidad.id} />
+                                        <select
+                                          name="urgencia"
+                                          defaultValue={necesidad.urgencia}
+                                          className={`rounded border px-1.5 py-0.5 text-xs font-bold ${
+                                            necesidad.urgencia === "URGENTE"
+                                              ? "border-red-200 bg-red-50 text-red-700"
+                                              : necesidad.urgencia === "MEDIA"
+                                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                                              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                          }`}
+                                        >
+                                          <option value="URGENTE">Urgente</option>
+                                          <option value="MEDIA">Media</option>
+                                          <option value="SATURADO">Saturado</option>
+                                        </select>
+                                        <button
+                                          type="submit"
+                                          className="rounded bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100"
+                                        >
+                                          OK
+                                        </button>
+                                      </SnackbarForm>
+                                    </td>
+                                    <td className="py-1.5 text-right">
+                                      <SnackbarForm action={eliminarNecesidadModeracion}>
+                                        <input type="hidden" name="token" value={token} />
+                                        <input type="hidden" name="centroId" value={centro.id} />
+                                        <input type="hidden" name="necesidadId" value={necesidad.id} />
+                                        <button
+                                          type="submit"
+                                          className="rounded px-2 py-0.5 text-[10px] font-bold text-red-600 opacity-0 hover:bg-red-50 group-hover:opacity-100"
+                                        >
+                                          Quitar
+                                        </button>
+                                      </SnackbarForm>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-400">Sin insumos registrados.</p>
+                        )}
+
+                        {/* Add need - compact inline */}
+                        <SnackbarForm
+                          action={agregarNecesidadModeracion}
+                          className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 p-2"
+                        >
+                          <input type="hidden" name="token" value={token} />
+                          <input type="hidden" name="centroId" value={centro.id} />
+                          <select
+                            name="categoriaId"
+                            className="rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
+                            required
+                          >
+                            <option value="">+ Agregar insumo</option>
+                            {categoriasInsumo.map((cat) => (
+                              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                            ))}
+                          </select>
+                          <select
+                            name="urgencia"
+                            defaultValue="MEDIA"
+                            className="rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
+                          >
+                            <option value="URGENTE">Urgente</option>
+                            <option value="MEDIA">Media</option>
+                            <option value="SATURADO">Saturado</option>
+                          </select>
+                          <input
+                            name="detalle"
+                            placeholder="Detalle (opcional)"
+                            className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800"
+                          >
+                            Agregar
+                          </button>
+                        </SnackbarForm>
+
+                        {/* Edit centro form */}
+                        <details className="rounded-lg border border-zinc-200 bg-zinc-50">
+                          <summary className="cursor-pointer px-3 py-2 text-xs font-bold text-zinc-500">
+                            Editar datos del centro
+                          </summary>
+                          <SnackbarForm
+                            action={actualizarDetallesCentroModeracion}
+                            className="grid gap-2 border-t border-zinc-200 p-3"
+                          >
+                            <input type="hidden" name="token" value={token} />
+                            <input type="hidden" name="centroId" value={centro.id} />
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="text-xs font-bold text-zinc-600">
+                                Nombre
+                                <input name="nombre" defaultValue={centro.nombre} required className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                              <label className="text-xs font-bold text-zinc-600">
+                                Contacto
+                                <input name="contacto" defaultValue={centro.contacto ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                            </div>
+                            <label className="text-xs font-bold text-zinc-600">
+                              Dirección
+                              <input name="direccion" defaultValue={centro.direccion} required className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                            </label>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="text-xs font-bold text-zinc-600">
+                                Link Maps
+                                <input name="ubicacion_url" type="url" defaultValue={centro.ubicacion_url ?? ""} placeholder="https://maps.google.com/..." className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                              <label className="text-xs font-bold text-zinc-600">
+                                Vialidad
+                                <input name="vialidad" defaultValue={centro.estado_vialidad ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              <label className="text-xs font-bold text-zinc-600">
+                                Inicio recepción
+                                <input name="fecha_inicio_recepcion" type="date" defaultValue={centro.fecha_inicio_recepcion ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                              <label className="text-xs font-bold text-zinc-600">
+                                Fin recepción
+                                <input name="fecha_fin_recepcion" type="date" defaultValue={centro.fecha_fin_recepcion ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                              <label className="text-xs font-bold text-zinc-600">
+                                Horario
+                                <input name="horario_recepcion" defaultValue={centro.horario_recepcion ?? ""} placeholder="Lun-Sáb 8am-5pm" className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="text-xs font-bold text-zinc-600">
+                                Responsable
+                                <input name="responsable_nombre" defaultValue={centro.responsable_nombre ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                              <label className="text-xs font-bold text-zinc-600">
+                                Tel. responsable
+                                <input name="responsable_telefono" defaultValue={centro.responsable_telefono ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              </label>
+                            </div>
+                            <button type="submit" className="w-full rounded bg-zinc-800 px-3 py-1.5 text-xs font-bold text-white sm:w-auto">
+                              Guardar cambios
+                            </button>
+                          </SnackbarForm>
+                        </details>
+                      </div>
+                    </details>
+                  ) : null}
                 </article>
               );
-            })
+            })}
+            </div>
           )}
         </section>
         </SnackbarShell>

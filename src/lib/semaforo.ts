@@ -1,4 +1,4 @@
-import type { Necesidad, SemafaroEstado, Urgencia } from "@/lib/types";
+import type { CentroAcopio, Necesidad, SemafaroEstado, Urgencia } from "@/lib/types";
 
 const URGENCIA_PRIORITY: Record<Urgencia, number> = {
   URGENTE: 3,
@@ -46,3 +46,17 @@ export const URGENCIA_STYLES: Record<Urgencia, string> = {
   MEDIA: "bg-amber-100 text-amber-800 border-amber-200",
   SATURADO: "bg-green-100 text-green-800 border-green-200",
 };
+
+export const SEMAFORO_PRIORITY: Record<SemafaroEstado, number> = {
+  URGENTE: 4,
+  MEDIA: 3,
+  SATURADO: 2,
+  SIN_DATOS: 1,
+};
+
+export function calcularSemafaroGrupo(centros: CentroAcopio[]): SemafaroEstado {
+  return centros.reduce<SemafaroEstado>((max, centro) => {
+    const s = calcularSemafaro(centro.necesidades ?? []);
+    return SEMAFORO_PRIORITY[s] > SEMAFORO_PRIORITY[max] ? s : max;
+  }, "SIN_DATOS");
+}

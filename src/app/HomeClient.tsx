@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CentroCard } from "@/components/CentroCard";
+import { CentroGrupoEstado } from "@/components/CentroGrupoEstado";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
+import { calcularSemafaroGrupo, SEMAFORO_PRIORITY } from "@/lib/semaforo";
 import type {
   CentroAcopio,
   ContactoEmergencia,
@@ -13,7 +14,55 @@ import type {
   HomeSearchFilters,
   HomeSearchMeta,
   Municipio,
+  SemafaroEstado,
 } from "@/lib/types";
+
+interface GrupoEstado {
+  estadoId: string;
+  nombre: string;
+  centros: CentroAcopio[];
+  semaforo: SemafaroEstado;
+  defaultOpen: boolean;
+}
+
+function agruparCentrosPorEstado(
+  centros: CentroAcopio[],
+  estados: Estado[],
+  hayFiltroActivo: boolean,
+): GrupoEstado[] {
+  const estadosMap = new Map(estados.map((e) => [e.id, e.nombre]));
+  const mapaGrupos = new Map<string, CentroAcopio[]>();
+
+  for (const centro of centros) {
+    const key = centro.estado_id ?? "__sin_estado__";
+    if (!mapaGrupos.has(key)) mapaGrupos.set(key, []);
+    mapaGrupos.get(key)!.push(centro);
+  }
+
+  const grupos: GrupoEstado[] = [];
+  for (const [estadoId, centrosGrupo] of mapaGrupos) {
+    const nombre =
+      estadoId === "__sin_estado__"
+        ? "Sin estado"
+        : (estadosMap.get(estadoId) ?? "Desconocido");
+    const semaforo = calcularSemafaroGrupo(centrosGrupo);
+    grupos.push({
+      estadoId,
+      nombre,
+      centros: centrosGrupo,
+      semaforo,
+      defaultOpen: hayFiltroActivo,
+    });
+  }
+
+  grupos.sort((a, b) => {
+    if (a.estadoId === "__sin_estado__") return 1;
+    if (b.estadoId === "__sin_estado__") return -1;
+    return SEMAFORO_PRIORITY[b.semaforo] - SEMAFORO_PRIORITY[a.semaforo];
+  });
+
+  return grupos;
+}
 
 interface HomeClientProps {
   estados: Estado[];
@@ -83,6 +132,11 @@ export function HomeClient({
     textoResultados = ` en ${estadoNombre}`;
   }
 
+  const hayFiltroActivo = Boolean(
+    initialFilters.estadoId || initialFilters.municipioId || initialFilters.q,
+  );
+  const grupos = agruparCentrosPorEstado(centros, estados, hayFiltroActivo);
+
   const telefonosHref = (telefono: string) =>
     `tel:${telefono.replace(/[^\d+]/g, "")}`;
   const whatsappHref = (telefono: string) =>
@@ -109,7 +163,7 @@ export function HomeClient({
           Plataforma centralizada para coordinar ayuda humanitaria en tiempo real.
         </p>
 
-        <div id="tour-actions" className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div id="tour-actions" className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/centros/nuevo"
             className="cta-primary flex items-center justify-center gap-2 rounded-xl bg-blue-800 px-5 py-4 text-base font-bold text-white shadow-md transition-all hover:bg-blue-900 active:scale-[0.98]"
@@ -127,6 +181,12 @@ export function HomeClient({
             className="cta-secondary flex items-center justify-center gap-2 rounded-xl border-2 border-blue-100 bg-blue-50 px-5 py-4 text-base font-bold text-blue-900 shadow-sm transition-colors hover:bg-blue-100 active:scale-[0.98]"
           >
             <span>🔐</span> Panel moderador
+          </Link>
+          <Link
+            href="/mapa"
+            className="cta-secondary flex items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 bg-white px-5 py-4 text-base font-bold text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98]"
+          >
+            <span>🗺️</span> Ver en mapa
           </Link>
         </div>
       </header>
@@ -322,14 +382,19 @@ export function HomeClient({
         </form>
       </div>
 
-      <section id="tour-results" aria-live="polite" className="space-y-4">
-        {centros.length === 0 ? (
+      <section id="tour-results" aria-live="polite" className="space-y-2">
+        {grupos.length === 0 ? (
           <p className="rounded border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
             No hay centros registrados en Supabase para esta ubicación.
           </p>
         ) : (
-          centros.map((centro) => (
-            <CentroCard key={centro.id} centro={centro} />
+          grupos.map((grupo) => (
+            <CentroGrupoEstado
+              key={grupo.estadoId}
+              nombreEstado={grupo.nombre}
+              centros={grupo.centros}
+              defaultOpen={grupo.defaultOpen}
+            />
           ))
         )}
       </section>
