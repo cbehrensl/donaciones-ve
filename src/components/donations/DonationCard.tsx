@@ -17,7 +17,7 @@ export function DonationCard({ link }: { link: DonationLink }) {
 
   return (
     <div className="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-      <div className="flex justify-center items-center h-32 bg-gray-50 border-b border-gray-100 p-4">
+      <div className="flex justify-center items-center h-20 bg-gray-50 border-b border-gray-100 p-2">
         {imageUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img 
@@ -26,19 +26,19 @@ export function DonationCard({ link }: { link: DonationLink }) {
             className="max-h-full max-w-full object-contain drop-shadow-sm"
           />
         ) : (
-          <div className="text-gray-400 text-4xl">🫶</div>
+          <div className="text-gray-400 text-3xl">🫶</div>
         )}
       </div>
-      <div className="p-5 flex-grow flex flex-col">
-        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{link.title}</h3>
-        <p className="text-sm text-gray-600 flex-grow line-clamp-3 mb-4">
+      <div className="p-3 flex-grow flex flex-col">
+        <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2">{link.title}</h3>
+        <p className="text-xs text-gray-600 flex-grow line-clamp-2 mb-3">
           {link.description}
         </p>
         <a
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full text-center py-2.5 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors duration-200 mt-auto"
+          className="w-full text-center py-1.5 px-3 rounded-lg bg-blue-600 text-xs text-white font-bold hover:bg-blue-700 transition-colors duration-200 mt-auto"
         >
           Ir a Donar
         </a>

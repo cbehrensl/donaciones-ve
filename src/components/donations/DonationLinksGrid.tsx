@@ -19,7 +19,7 @@ export async function DonationLinksGrid() {
       
       <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {links.map((link) => (
-          <div key={link.id} className="snap-start shrink-0 w-[280px]">
+          <div key={link.id} className="snap-start shrink-0 w-[180px]">
             <DonationCard link={link} />
           </div>
         ))}
