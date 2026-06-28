@@ -11,7 +11,7 @@ const imgDividendo   = "/donar/dividendo.png";
 const imgCaritasBanner = "/donar/caritas.png";
 const imgJpMorgan    = "/donar/imgJpMorgan.png";
 const imgQRCode      = "/donar/imgQRCode.png";
-const imgPaypal      = "/donar/imgPaypal.png";
+const imgWompi      = "/donar/qr_wompi.png";
 
 // CO assets
 const imgCaritasCol    = "/donar/caritas_col.png";
@@ -21,6 +21,7 @@ const imgBrebLogo      = "/donar/breb_logo.png";
 const imgQrBreb        = "/donar/qr_breb.png";
 const imgQrPaypalCo    = "/donar/qr_paypal_co.png";
 const imgPaypalLogo    = "/donar/paypal_logo.png";
+const imgWompiLogo      = "/donar/wompi_logo.png";
 
 const svgP1 = "M157.301 0L159.628 1.5623C162.786 3.61624 163.944 7.64218 164.572 11.3677C165.959 19.649 170.34 27.4441 178.349 30.8473C182.008 32.4042 186.674 31.7923 190.574 31.0385C203.416 28.5694 215.882 32.8794 223.939 43.2147C227.534 47.8306 231.166 52.9435 231.674 58.9087L232.701 70.91C233.204 76.8097 237.629 80.9012 243.659 80.7646C249.204 80.6335 254.519 79.7977 260.118 78.6779C279.084 74.8759 297.914 72.8165 317.328 73.1934C322.545 73.2972 327.401 74.417 332.061 76.5311C338.184 79.3061 343.865 82.5017 349.197 86.7516C364.798 99.179 386.108 102.227 404.205 93.4542C408.685 91.2801 412.793 88.7127 415.688 84.6321C418.583 80.5515 415.813 73.1825 422.024 72.8984L456.155 71.3471L510.153 67.7254L522.94 67.8182C523.53 67.8182 524.541 68.4355 524.803 68.7742C525.737 69.9814 523.104 72.598 520.876 72.9913L505.061 75.8045C500.14 76.6786 495.595 77.2849 490.504 77.1265C489.307 77.0883 487.657 78.1535 487.363 79.093C487.068 80.0326 487.668 82.2449 488.51 82.7912L494.956 86.9428C500.555 90.5481 498.015 101.424 508.656 103.811L534.887 109.689L552.968 115.097C558.431 116.73 563.183 119.866 567.706 123.28C575.327 129.038 581.27 141.17 576.556 145.518C572.89 148.9 573.142 153.985 576.676 157.656C581.401 162.573 588.311 165.337 595.413 165.397L609.042 165.517C614.149 165.834 618.214 168.838 619.279 173.864L620 174.792V180.255C618.673 185.876 615.417 190.967 610.113 193.868L603.416 197.528C598.259 200.346 593.566 203.482 590.038 208.196C584.679 215.358 581.401 226.731 589.863 230.068L600.034 234.083C600.897 234.422 601.99 236.045 602.148 236.886C602.328 237.831 601.4 239.945 600.553 240.486L591.119 246.484C586.771 249.248 582.335 251.957 577.293 253.301C573.24 254.383 569.285 255.437 565.871 257.709C560.523 261.271 558.076 267.231 559.097 273.42C560.228 280.264 552.783 279.314 551.51 282.488C551.133 283.422 551.794 285.716 552.499 286.557L564.669 301.202L584.559 323.834C589.251 329.171 591.66 335.513 586.591 340.26C584.564 342.156 582.1 343.434 579.615 344.756L561.823 354.255C543.349 364.115 519.084 373.719 498.424 376.029C493.366 376.597 489.411 378.482 486.98 383.333L482.31 392.646C480.578 396.104 477.175 397.677 473.69 395.924L462.797 390.45C450.698 384.365 431.431 386.288 406.035 371.768L396.978 365.082C396.661 364.847 395.411 364.454 395.247 364.782C394.181 366.989 398.317 375.685 400.977 378.449C405.97 383.65 411.378 387.599 416.928 392.084C419.501 394.165 422.39 396.683 423.155 400.054C425.597 410.821 419.943 417.113 425.384 426.258C431.841 437.101 426.706 444.41 431.174 448.261C433.742 450.474 437.385 451.375 440.81 451.238L455.559 450.648C458.504 450.528 460.394 452.211 460.7 454.969C461.317 460.579 458.667 465.081 453.609 467.364C446.715 470.483 439.532 472.439 432.032 473.548C429.006 473.996 427.421 476.825 428.033 479.698C430.016 489.001 424.204 497.272 414.732 498.397C407.417 499.266 401.053 502.199 395.427 506.826C388.123 512.835 382.382 507.918 379.269 513.113C377.378 516.271 375.248 519.111 372.391 521.52C369.682 523.798 367.994 526.442 366.213 529.539L362.771 535.33H360.537C356.304 531.768 362.837 526.622 357.522 521.897C353.922 518.696 348.804 517.472 344.177 518.947C336.748 521.318 340.298 528.906 339.473 531.003C338.239 534.139 324.353 526.065 318.89 522.891C312.8 519.351 307.37 515.484 302.737 510.06C300.394 507.317 298.793 504.002 297.559 500.533L290.119 479.556C288.256 474.296 286.47 468.866 286.634 463.278C286.748 459.514 286.765 456.149 284.006 453.374L272.901 442.198C264.15 433.392 253.159 434.84 252.766 431.802C252.667 431.043 253.35 429.213 254.126 428.814L265.941 422.718C278.183 416.403 276.167 404.014 271.786 391.423C271.24 389.855 269.252 388.905 267.739 389.484C265.007 390.521 262.123 389.484 261.249 386.496C259.364 380.061 258.354 373.418 257.955 366.546C257.491 358.554 256.48 350.945 254.994 343.183C252.727 331.34 255.431 320.458 261.932 310.593L274.72 291.19C276.79 288.049 277.178 283.957 275.621 280.434C272.868 274.19 264.958 273.07 258.037 274.523L231.461 280.122C223.388 281.821 215.232 281.515 207.033 280.898C203.87 280.658 201.084 280.745 198.085 281.668C190.328 284.05 181.648 286.486 177.944 280.374L167.828 263.696C163.195 256.065 157.749 249.269 151.478 242.977C149.845 241.332 147.272 241.043 145.387 242.01C139.04 245.271 136.226 239.355 128.628 236.919C124.296 235.531 119.959 236.629 116.692 239.601C112.988 242.971 108.198 243.348 103.735 240.895C93.0773 235.039 84.7741 238.049 73.4228 241.666C66.163 243.982 61.4434 240.42 57.9582 233.816C55.3744 228.916 51.7472 225.786 46.8145 223.584C41.4065 221.17 38.6151 215.008 40.68 209.54L43.5315 201.974C45.0173 198.025 44.5093 193.627 43.1054 189.585C40.4069 181.823 37.2386 174.585 33.9883 167.008C31.0604 160.174 28.99 153.346 27.6681 146.141C26.8815 141.875 23.451 139.744 19.4086 140.695C12.564 142.301 3.67087 144.945 0 142.082V139.296C1.8409 136.03 4.04233 133.113 6.53874 129.972C10.1004 125.492 12.493 120.319 14.1973 114.709C19.4687 97.3764 24.7948 80.4696 31.328 63.6066C33.1088 59.007 35.8893 55.1887 39.0849 51.6544C40.8439 49.7097 43.4714 48.4151 46.0825 48.3331C51.2611 48.1747 55.2269 45.4598 57.0514 40.5598L61.0282 29.8477C62.6888 25.3683 67.3648 22.5278 71.8005 21.0365L84.1186 16.8958C86.4785 16.1038 88.6253 14.5032 91.2091 14.5414C92.908 14.5688 94.8362 15.9781 95.1258 17.2564C95.3825 18.398 94.6232 20.6705 93.4925 21.3642C87.276 25.1771 80.3549 24.3304 73.2863 27.3622C69.1347 29.143 67.2556 33.2891 68.2989 37.7302C70.6315 47.6448 78.4812 55.0139 80.6608 60.8643C83.8073 69.3095 80.8301 78.5959 74.5864 84.9653C68.3426 91.3347 64.2675 98.8786 63.7486 108.176C63.1914 118.096 65.7479 128.032 71.1723 136.336C75.078 142.312 81.6386 145.218 88.5652 143.759C99.6488 141.421 108.793 133.801 106.493 121.761C103.855 107.963 98.092 95.3443 91.0561 83.2665C85.3641 73.4939 84.6048 62.809 94.6778 57.4229C98.9551 55.1341 103.571 54.0743 108.247 52.4628L137.45 42.3679L158.257 33.6879C160.808 32.6227 163.681 32.0709 165.845 30.3448C167.139 29.3069 166.232 26.8924 165.255 26.1986C161.791 23.735 157.694 28.2471 154.073 25.6524C147.479 20.9218 141.372 10.4172 146.103 5.12392C148.157 2.82417 150.959 1.32741 153.516 0H157.339L157.301 0Z";
 const svgP2 = "M429.415 60.5749C422.341 56.5872 418.048 59.4714 412.121 55.0576C412.978 52.5831 415.901 51.7746 418.485 52.37C424.505 53.7521 428.82 58.1385 429.994 54.9047C430.737 52.8562 431.617 51.5452 433.004 50.103L436.883 46.0662L442.285 52.1898C442.968 52.9654 443.061 54.637 442.214 55.3526L437.38 59.4605C435.402 61.143 431.748 61.8913 429.415 60.5749Z";
@@ -155,23 +156,11 @@ function ACCaritasContent() {
   const [tab, setTab] = useState(0);
   return (
     <>
-      <TabSelector tabs={["TRANSFERENCIA", "EXTRANJERO", "PAYPAL"]} active={tab} onChange={setTab} />
+      <TabSelector tabs={["TRANSFERENCIA", "EXTRANJERO"]} active={tab} onChange={setTab} />
       <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 13 }}>
         {tab === 0 && (<><CopyField label="BANCO" value="MERCANTIL" withLogo /><CopyField label="TITULAR" value="A.C CARITAS DE VENEZUELA" /><CopyField label="TIPO DE CUENTA" value="CORRIENTE" /><CopyField label="NÚMERO DE CUENTA" value="01050699921699059454" /><CopyField label="RIF" value="J-304856970" /></>)}
         {tab === 1 && (<><BankIntermediario /><CopyField label="NOMBRE DE LA CUENTA" value="INSTITUTO PER LE OPERE DI RELIGIONE" /><CopyFieldMultiline label="DIRECCIÓN" value="4 CHASE METRO TECH, 7TH FLOOR, 11245 BROOKLYN NEW YORK, U.S.A" /><div style={{ display: "flex", gap: 10 }}><CopyFieldHalf label="COD. SWIFT" value="CHASUS33XXX" /><CopyFieldHalf label="FED WIRE" value="021000021" /></div><div style={{ display: "flex", gap: 10 }}><CopyFieldHalf label="COD. SWIFT" value="IOPRVAVX" /><CopyFieldHalf label="NÚMERO DE CUENTA" value="41563002" /></div><CopyField label="A FAVOR DE" value="CARITAS DE VENEZUELA" /></>)}
-        {tab === 2 && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, paddingTop: 4 }}>
-            <div className="d-paypal-logo" style={{ position: "relative", overflow: "hidden" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imgPaypal} alt="PayPal" style={{ position: "absolute", height: "350%", left: 0, top: "-123%", width: "100%", maxWidth: "none" }} />
-            </div>
-            <div style={{ border: "1px solid #418fde", borderRadius: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box", padding: 11 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imgQRCode} alt="QR PayPal" style={{ width: "100%", maxWidth: 270, height: "auto", aspectRatio: "1", objectFit: "cover", borderRadius: 8 }} />
-              <span style={{ fontFamily: hv, fontSize: 13, color: "#001e62", lineHeight: "20px" }}>ESCANEA</span>
-            </div>
-          </div>
-        )}
+        
       </div>
       <p style={{ marginTop: 18, fontFamily: hv, fontSize: 13, color: "#7d8189", lineHeight: "18px" }}>No es necesario enviar comprobante.</p>
     </>
@@ -278,7 +267,7 @@ function CaritasColContent() {
       <p style={{ fontFamily: hv, fontSize: 13, color: "#272d3b", lineHeight: "21px", margin: "0 0 16px" }}>
         Cáritas Colombiana es el organismo social de la Iglesia Católica en Colombia con más de 70 años de servicio. Dedicado a brindar ayuda humanitaria y apoyar a las comunidades más vulnerables.
       </p>
-      <TabSelector tabs={["TRANSFERENCIA", "BRE-B", "EXTERIOR", "PAYPAL"]} active={tab} onChange={setTab} />
+      <TabSelector tabs={["TRANSFERENCIA", "BRE-B", "EXTERIOR", "PSE-NEQUI"]} active={tab} onChange={setTab} />
       <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 13 }}>
         {tab === 0 && (
           <>
@@ -348,16 +337,13 @@ function CaritasColContent() {
         {tab === 3 && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingTop: 4 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imgPaypalLogo} alt="PayPal" style={{ height: 40, width: "auto", objectFit: "contain" }} />
+            <img src={imgWompiLogo} alt="Wompi" style={{ height: 40, width: "auto", objectFit: "contain" }} />
             <div style={{ border: "1px solid #418fde", borderRadius: 20, padding: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imgQrPaypalCo} alt="QR PayPal" style={{ width: "100%", maxWidth: 240, height: "auto", aspectRatio: "1", objectFit: "contain", borderRadius: 8 }} />
-              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Confirma que el correo de Paypal sea <span style={{ fontWeight: "bold" }}>prensacaritasvenezuela@gmail.com</span></p>
+              <img src={imgWompi} alt="QR Wompi" style={{ width: "100%", maxWidth: 240, height: "auto", aspectRatio: "1", objectFit: "contain", borderRadius: 8 }} />
               <span style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "20px", fontWeight: "bold" }}>ESCANEA</span>
+              <p style={{ fontFamily: hv, fontSize: 14, color: "#001e62", lineHeight: "16px", textAlign: "center" }}>Confirma que la cuenta destino sea <span style={{ fontWeight: "bold" }}>SECRETARIADO NACIONAL DE PASTORAL SOCIAL CARITAS COLOMBIANA</span> </p>
             </div>
-            <p style={{ fontFamily: hv, fontWeight: "bold", fontSize: 14, color: "#001e62", lineHeight: "20px", margin: 0 }}>
-              PayPal Cáritas Venezuela
-            </p>
           </div>
         )}
       </div>
@@ -474,7 +460,7 @@ function FluidLayout({ pais }: { pais: string }) {
             Hoy, más que nunca, tu solidaridad puede hacer la diferencia.
           </p>
           <p style={{ fontFamily: hv, fontSize: 18, color: "#001e62", lineHeight: "26px", margin: 0 }}>
-            {isVE ? "Gracias por tu apoyo a Venezuela." : "Gracias por tu apoyo a Colombia."}
+            {isVE ? "Gracias por tu apoyo a Venezuela." : "Gracias por tu apoyo a Venezuela."}
           </p>
         </div>
         <div style={{ background: "#001e62", height: 64 }} />
@@ -484,7 +470,7 @@ function FluidLayout({ pais }: { pais: string }) {
 }
 
 function DesktopLayout({ pais }: { pais: string }) {
-  const isVE = pais === "VE";
+  if (pais !== "VE") return <DesktopLayoutCO />;
   return (
     <div style={{ width: "100%", background: "#f4f4f5", overflowX: "hidden" }}>
       <div style={{ width: 1280, minHeight: 1670, position: "relative", background: "#f4f4f5", margin: "0 auto" }}>
@@ -512,41 +498,20 @@ function DesktopLayout({ pais }: { pais: string }) {
             <li>¡Listo! No necesitas enviarnos comprobante.</li>
           </ol>
         </div>
-        {isVE ? (
-          <>
-            <div style={{ position: "absolute", left: 68, top: 391, width: 524, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
-              <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imgDividendo} alt="Dividendo" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              </div>
-              <div style={{ padding: "25px 16px 24px" }}><CaritasEmergenciaContent /></div>
-            </div>
-            <div style={{ position: "absolute", left: 688, top: 391, width: 524, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
-              <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imgCaritasBanner} alt="Cáritas" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              </div>
-              <div style={{ padding: "25px 16px 24px" }}><ACCaritasContent /></div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ position: "absolute", left: 68, top: 391, width: 524, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
-              <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imgCaritasCol} alt="Cáritas Colombiana" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              </div>
-              <div style={{ padding: "25px 16px 24px" }}><CaritasColContent /></div>
-            </div>
-            <div style={{ position: "absolute", left: 688, top: 391, width: 524, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
-              <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imgDividendo} alt="Dividendo Voluntario" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              </div>
-              <div style={{ padding: "25px 16px 24px" }}><DividendoColContent /></div>
-            </div>
-          </>
-        )}
+        <div style={{ position: "absolute", left: 68, top: 391, width: 524, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
+          <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgDividendo} alt="Dividendo" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+          <div style={{ padding: "25px 16px 24px" }}><CaritasEmergenciaContent /></div>
+        </div>
+        <div style={{ position: "absolute", left: 688, top: 391, width: 524, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
+          <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgCaritasBanner} alt="Cáritas" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+          <div style={{ padding: "25px 16px 24px" }}><ACCaritasContent /></div>
+        </div>
         <div style={{ position: "absolute", left: 0, top: 1300, width: 1280, height: 292, backgroundImage: "linear-gradient(182.21deg, rgb(65,143,222) 20.29%, rgb(141,187,235) 153.32%)" }} />
         <div style={{ position: "absolute", left: 688, top: 1300, width: 592, height: 292, WebkitMaskImage: `url("${imgGroup2}")`, maskImage: `url("${imgGroup2}")`, WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "-47px 25px", maskPosition: "-47px 25px", WebkitMaskSize: "639px 292px", maskSize: "639px 292px" }}>
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} fill="none" preserveAspectRatio="none" viewBox="0 0 620 535.33">
@@ -554,18 +519,100 @@ function DesktopLayout({ pais }: { pais: string }) {
             <path d={svgP2} fill="#001E62" />
           </svg>
         </div>
+        {/* "Unidos por Venezuela" text overlay on map */}
+        <div style={{ position: "absolute", left: 688, top: 1300, width: 592, height: 292, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          <span style={{ fontFamily: hv, fontSize: 28, color: "white", lineHeight: "36px" }}>Unidos por</span>
+          <span style={{ fontFamily: hv, fontWeight: "bold", fontSize: 38, color: "#f5c842", lineHeight: "44px" }}>Venezuela</span>
+        </div>
         <div style={{ position: "absolute", left: 867, top: 1410, width: 284, height: 77, WebkitMaskImage: `url("${imgGroup2}")`, maskImage: `url("${imgGroup2}")`, WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "-226px -110px", maskPosition: "-226px -110px", WebkitMaskSize: "639px 292px", maskSize: "639px 292px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt="" src={imgImage3} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
         </div>
         <div style={{ position: "absolute", left: 138, top: 1456, transform: "translateY(-50%)", fontFamily: hv, fontWeight: "bold", fontSize: 32, color: "#001e62", lineHeight: "40px", width: 544 }}>
           Hoy, más que nunca, tu solidaridad puede hacer la diferencia.
         </div>
         <div style={{ position: "absolute", left: 138, top: 1512, transform: "translateY(-50%)", fontFamily: hv, fontSize: 24, color: "#001e62", lineHeight: "32px", whiteSpace: "nowrap" }}>
-          {isVE ? "Gracias por tu apoyo a Venezuela." : "Gracias por tu apoyo a Colombia."}
+          Gracias por tu apoyo a Venezuela.
         </div>
         <div style={{ position: "absolute", left: 0, top: 1592, width: 1280, height: 77, background: "#001e62" }} />
       </div>
+    </div>
+  );
+}
+
+function DesktopLayoutCO() {
+  return (
+    <div style={{ width: "100%", background: "#f4f4f5", overflowX: "hidden" }}>
+      {/* Header band — limitado a 1280px centrado igual que VE */}
+      <div style={{ width: 1280, margin: "0 auto", background: "#d9e8f8", padding: "32px 68px 100px", textAlign: "center" }}>
+        <p style={{ fontFamily: hv, fontSize: 16, color: "#001e62", lineHeight: "24px", margin: "0 0 6px" }}>
+          Elige la ONG a la que deseas apoyar y selecciona el método de pago de tu preferencia.
+        </p>
+        <p style={{ fontFamily: hv, fontWeight: "bold", fontSize: 24, color: "#001e62", lineHeight: "32px", margin: 0 }}>
+          Cada aporte, sin importar el monto, ayuda a quienes más lo necesitan.
+        </p>
+      </div>
+
+      {/* HowTo — marginTop negativo para que solape el blue band como en VE */}
+      <div style={{ width: 1280, margin: "0 auto", padding: "0 68px", marginTop: -54 }}>
+        <div style={{ position: "relative", background: "#ecf3fb", border: "1px solid #418fde", borderRadius: 20, overflow: "hidden", height: 197, display: "flex" }}>
+          <div style={{ width: 338, flexShrink: 0, position: "relative" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="" src={imgRectangle16} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} />
+            <div style={{ position: "absolute", top: 0, right: 0, width: 162, height: "100%", backgroundImage: "linear-gradient(to right, rgba(236,243,251,0), rgb(236,243,251))" }} />
+          </div>
+          <div style={{ padding: "22px 24px" }}>
+            <p style={{ fontFamily: hv, fontWeight: "bold", fontSize: 20, color: "#001e62", lineHeight: "24px", margin: "0 0 12px" }}>¿Cómo donar?</p>
+            <ol style={{ fontFamily: hv, fontSize: 16, color: "#272d3b", lineHeight: "24px", margin: 0, paddingLeft: 24 }}>
+              <li>Elije un país y una ONG a la que donar.</li>
+              <li>Selecciona el método de pago.</li>
+              <li>Toca cualquier campo para copiarlo.</li>
+              <li>Realiza el pago desde tu app bancaria.</li>
+              <li>¡Listo! No necesitas enviarnos comprobante.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      {/* Cards — flujo normal para que crezcan sin desbordarse */}
+      <div style={{ width: 1280, margin: "0 auto", padding: "32px 68px 60px", display: "flex", gap: 64, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
+          <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgCaritasCol} alt="Cáritas Colombiana" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+          <div style={{ padding: "25px 16px 24px" }}><CaritasColContent /></div>
+        </div>
+        <div style={{ flex: 1, background: "white", borderRadius: 20, boxShadow: "0px 4px 22.1px 0px rgba(0,0,0,0.18)" }}>
+          <div style={{ borderRadius: "20px 20px 0 0", overflow: "hidden", height: 174 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgDividendo} alt="Dividendo Voluntario" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+          <div style={{ padding: "25px 16px 24px" }}><DividendoColContent /></div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ position: "relative", background: "linear-gradient(182.21deg, rgb(65,143,222) 20.29%, rgb(141,187,235) 153.32%)", padding: "52px 68px 52px 206px", minHeight: 292, boxSizing: "border-box" }}>
+        <p style={{ fontFamily: hv, fontWeight: "bold", fontSize: 32, color: "#001e62", lineHeight: "40px", margin: "0 0 16px", maxWidth: 544 }}>
+          Hoy, más que nunca, tu solidaridad puede hacer la diferencia.
+        </p>
+        <p style={{ fontFamily: hv, fontSize: 24, color: "#001e62", lineHeight: "32px", margin: 0 }}>
+          Gracias por tu apoyo a Venezuela.
+        </p>
+        {/* Venezuela map — right side */}
+        <div style={{ position: "absolute", right: 0, top: 0, width: 592, height: 292, WebkitMaskImage: `url("${imgGroup2}")`, maskImage: `url("${imgGroup2}")`, WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "-47px 25px", maskPosition: "-47px 25px", WebkitMaskSize: "639px 292px", maskSize: "639px 292px" }}>
+          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} fill="none" preserveAspectRatio="none" viewBox="0 0 620 535.33">
+            <path d={svgP1} fill="#001E62" />
+            <path d={svgP2} fill="#001E62" />
+          </svg>
+        </div>
+        {/* "Unidos por Venezuela" text overlay on map */}
+        <div style={{ position: "absolute", right: 0, top: 0, width: 592, height: 292, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          <span style={{ fontFamily: hv, fontSize: 28, color: "white", lineHeight: "36px" }}>Unidos por</span>
+          <span style={{ fontFamily: hv, fontWeight: "bold", fontSize: 38, color: "#f5c842", lineHeight: "44px" }}>Venezuela</span>
+        </div>
+      </div>
+      <div style={{ height: 77, background: "#001e62" }} />
     </div>
   );
 }
