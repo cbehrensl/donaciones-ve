@@ -38,11 +38,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         initialFilters={filters}
         searchMeta={searchMeta}
         errors={errors}
+        donationsSlot={<DonationLinksGrid />}
       />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-12">
-        <DonationLinksGrid />
-      </div>
     </main>
   );
 }

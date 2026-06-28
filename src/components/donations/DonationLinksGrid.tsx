@@ -9,17 +9,19 @@ export async function DonationLinksGrid() {
   }
 
   return (
-    <section className="py-8 my-8 border-t border-gray-200">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Ayuda con Donaciones</h2>
-        <p className="text-gray-600 mt-2">
+    <section className="mb-8">
+      <div className="mb-4">
+        <h2 className="text-xl font-black tracking-tight text-zinc-900">Ayuda con Donaciones</h2>
+        <p className="text-sm text-zinc-600 mt-1">
           Colabora de forma segura a través de estas organizaciones verificadas.
         </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {links.map((link) => (
-          <DonationCard key={link.id} link={link} />
+          <div key={link.id} className="snap-start shrink-0 w-[280px]">
+            <DonationCard link={link} />
+          </div>
         ))}
       </div>
     </section>
