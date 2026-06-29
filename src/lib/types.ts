@@ -139,3 +139,14 @@ export interface CentroConCoordenadas extends CentroAcopio {
   lat: number;
   lng: number;
 }
+
+export interface DonationLink {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  image_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

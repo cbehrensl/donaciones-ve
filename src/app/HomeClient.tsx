@@ -120,6 +120,7 @@ interface HomeClientProps {
   initialFilters: HomeSearchFilters;
   searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
+  donationsSlot?: React.ReactNode;
 }
 
 export function HomeClient({
@@ -131,6 +132,7 @@ export function HomeClient({
   initialFilters,
   searchMeta,
   errors,
+  donationsSlot,
 }: HomeClientProps) {
   const [estadoId, setEstadoId] = useState(initialFilters.estadoId);
   const [municipioId, setMunicipioId] = useState(initialFilters.municipioId);
@@ -401,6 +403,7 @@ export function HomeClient({
       ) : null}
 
       <PublicSearchChatbot />
+      {donationsSlot}
 
       <div id="tour-filters" className="-mx-4 mb-8 bg-zinc-50 px-4 py-4 sm:mx-0 sm:rounded-2xl sm:border sm:border-zinc-200 sm:bg-white sm:p-6 sm:shadow-xl sm:shadow-zinc-200/50">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500 sm:text-xs">

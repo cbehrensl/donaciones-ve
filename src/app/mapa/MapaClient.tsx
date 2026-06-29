@@ -35,6 +35,7 @@ export default function MapaClient({ centros }: MapaClientProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   function handleEnableLocation() {
     navigator.geolocation.getCurrentPosition(
@@ -63,10 +64,22 @@ export default function MapaClient({ centros }: MapaClientProps) {
       selectedRadius != null
         ? withDist.filter((c) => c.distancia != null && c.distancia <= selectedRadius)
         : withDist
+
+    const textFiltered = searchQuery.trim()
+      ? filtered.filter((c) => {
+          const q = searchQuery.toLowerCase()
+          return (
+            c.nombre.toLowerCase().includes(q) ||
+            (c.municipios?.nombre || '').toLowerCase().includes(q) ||
+            (c.direccion || '').toLowerCase().includes(q)
+          )
+        })
+      : filtered
+
     return userLocation
-      ? [...filtered].sort((a, b) => (a.distancia ?? Infinity) - (b.distancia ?? Infinity))
-      : [...filtered].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  }, [centros, userLocation, selectedRadius])
+      ? [...textFiltered].sort((a, b) => (a.distancia ?? Infinity) - (b.distancia ?? Infinity))
+      : [...textFiltered].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  }, [centros, userLocation, selectedRadius, searchQuery])
 
   // Shared list items — same rendering on both mobile sheet and desktop sidebar
   const listItems = centrosOrdenados.map((centro) => {
@@ -204,7 +217,14 @@ export default function MapaClient({ centros }: MapaClientProps) {
 
         {/* Filter controls — only when sheet is expanded */}
         {sheetOpen && (
-        <div className="flex-shrink-0 px-4 pb-3 border-b border-zinc-100">
+        <div className="flex-shrink-0 px-4 pb-3 border-b border-zinc-100 flex flex-col gap-3">
+          <input
+            type="search"
+            placeholder="Buscar centro, municipio..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
           {userLocation ? (
             <div className="flex items-center gap-2">
               <label htmlFor="radius-mobile" className="text-xs text-zinc-500 font-medium whitespace-nowrap">
@@ -268,7 +288,14 @@ export default function MapaClient({ centros }: MapaClientProps) {
         </div>
 
         {/* Filter controls */}
-        <div className="flex-shrink-0 px-4 py-3 border-b border-zinc-200">
+        <div className="flex-shrink-0 px-4 py-3 border-b border-zinc-200 flex flex-col gap-3">
+          <input
+            type="search"
+            placeholder="Buscar centro, municipio..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
           {!userLocation ? (
             <div className="space-y-2">
               <button

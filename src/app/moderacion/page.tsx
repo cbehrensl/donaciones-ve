@@ -232,10 +232,16 @@ export default async function ModeracionPage({
           Revisa centros nuevos, verifica información y publica alertas de
           urgencia o saturación para orientar donaciones.
         </p>
-        <Link href="/" className="cta-secondary mt-3 inline-block text-sm font-semibold">
-          Volver a la vista pública
-        </Link>
+        <div className="mt-3 flex gap-3">
+          <Link href="/" className="cta-secondary inline-block text-sm font-semibold">
+            Volver a la vista pública
+          </Link>
+          <Link href="/admin/donations" className="cta-secondary inline-block text-sm font-semibold">
+            Gestionar Links de Donaciones
+          </Link>
+        </div>
       </header>
+
 
       {!isSupabaseConfigured() ? (
         <section className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
