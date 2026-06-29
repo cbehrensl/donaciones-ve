@@ -1,5 +1,5 @@
 import { getActiveDonationLinks } from "@/app/admin/donations/actions";
-import { DonationCard } from "./DonationCard";
+import { DonationCarousel } from "./DonationCarousel";
 
 export async function DonationLinksGrid() {
   const links = await getActiveDonationLinks();
@@ -38,17 +38,11 @@ export async function DonationLinksGrid() {
         </div>
       </summary>
 
-      <div className="border-t border-zinc-100 p-4 sm:p-5">
+      <div className="border-t border-zinc-100 p-4 sm:p-5 relative">
         <p className="text-sm text-zinc-600 mb-4">
           Colabora de forma segura a través de estas organizaciones verificadas.
         </p>
-        <div className="flex items-stretch overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {links.map((link) => (
-            <div key={link.id} className="snap-start shrink-0 w-[280px]">
-              <DonationCard link={link} />
-            </div>
-          ))}
-        </div>
+        <DonationCarousel links={links} />
       </div>
     </details>
   );
