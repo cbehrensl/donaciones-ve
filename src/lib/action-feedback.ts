@@ -27,6 +27,14 @@ export const ACTION_MESSAGES: Record<string, ActionFeedbackMessage> = {
     tone: "success",
     text: "El insumo se quitó del centro.",
   },
+  "alerta-creada": {
+    tone: "success",
+    text: "La alerta se publicó correctamente para la vista pública.",
+  },
+  "alerta-eliminada": {
+    tone: "success",
+    text: "La alerta se eliminó correctamente.",
+  },
   "centro-aprobado": {
     tone: "success",
     text: "El centro fue aprobado y ya puede mostrarse como verificado.",
@@ -82,6 +90,22 @@ export const ACTION_MESSAGES: Record<string, ActionFeedbackMessage> = {
   "supabase-service-no-configurado": {
     tone: "error",
     text: "Falta SUPABASE_SERVICE_ROLE_KEY. Es necesaria para validar códigos de gestión.",
+  },
+  "ai-no-configurado": {
+    tone: "error",
+    text: "El asistente AI no está configurado en este entorno.",
+  },
+  "chat-sin-centro": {
+    tone: "error",
+    text: "No pudimos identificar un centro único. Indica nombre y municipio.",
+  },
+  "chat-confirmado": {
+    tone: "success",
+    text: "Actualización aplicada correctamente desde el asistente.",
+  },
+  "chat-limite-sesion": {
+    tone: "error",
+    text: "Límite de consultas por sesión alcanzado. Espera unos minutos para continuar.",
   },
 };
 

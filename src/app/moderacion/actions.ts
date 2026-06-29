@@ -7,6 +7,10 @@ import {
   type ActionResult,
 } from "@/lib/action-feedback";
 import { mapUrgenciaToDb } from "@/lib/data";
+import {
+  aplicarActualizacionNecesidad,
+  registrarAlertaCentro,
+} from "@/lib/moderacion-updates";
 import { isModeratorTokenValid } from "@/lib/moderacion-auth";
 import { requireSupabaseServiceClient } from "@/lib/supabase";
 import type { Urgencia } from "@/lib/types";
@@ -211,37 +215,130 @@ export async function agregarNecesidadModeracion(
 
   const centroId = String(formData.get("centroId") ?? "");
   const categoriaId = String(formData.get("categoriaId") ?? "");
-  const urgencia = String(formData.get("urgencia") ?? "") as Urgencia;
+  const urgencia = "MEDIA";
   const detalle = String(formData.get("detalle") ?? "").trim() || null;
 
-  if (
-    !centroId ||
-    !categoriaId ||
-    !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)
-  ) {
+  if (!centroId || !categoriaId) {
     return actionError("datos-invalidos");
   }
 
   const supabase = requireSupabaseServiceClient();
-  const { error } = await supabase.from("necesidades").upsert(
-    {
-      centro_id: centroId,
-      categoria_id: Number(categoriaId),
-      nivel_urgencia: mapUrgenciaToDb(urgencia),
-      descripcion: detalle,
-      activo: true,
-    },
-    { onConflict: "centro_id,categoria_id" },
-  );
+  const { data: categoria, error: categoriaError } = await supabase
+    .from("categorias_insumo")
+    .select("nombre")
+    .eq("id", Number(categoriaId))
+    .maybeSingle();
 
-  if (error) {
-    console.error("Error agregando necesidad desde moderación:", error.message);
+  if (categoriaError || !categoria?.nombre) {
+    return actionError("datos-invalidos");
+  }
+
+  const result = await aplicarActualizacionNecesidad({
+    centroId,
+    categoriaInsumo: String(categoria.nombre),
+    urgencia,
+    detalle,
+    origen: "manual",
+  });
+
+  if (!result.ok) {
     return actionError("error-guardar");
   }
 
   revalidatePath("/");
   revalidatePath("/moderacion");
   return actionSuccess("insumo-agregado");
+}
+
+function parseDuracionHoras(
+  value: FormDataEntryValue | null,
+): number | null | "invalid" {
+  if (typeof value !== "string" || !value.trim()) {
+    return "invalid";
+  }
+
+  if (value === "indefinida") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 24 * 30) {
+    return "invalid";
+  }
+
+  return Math.floor(parsed);
+}
+
+export async function crearAlertaModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const centroId = String(formData.get("centroId") ?? "").trim();
+  const tipo = String(formData.get("tipo") ?? "").trim();
+  const mensaje = String(formData.get("mensaje") ?? "").trim();
+  const duracionHoras = parseDuracionHoras(formData.get("duracion_horas"));
+
+  if (
+    !centroId ||
+    !mensaje ||
+    duracionHoras === "invalid" ||
+    !["NECESIDAD_URGENTE", "INSUMO_SATURADO"].includes(tipo)
+  ) {
+    return actionError("datos-invalidos");
+  }
+
+  const expiresAt =
+    duracionHoras === null
+      ? null
+      : new Date(Date.now() + duracionHoras * 60 * 60 * 1000).toISOString();
+
+  await registrarAlertaCentro({
+    centroId,
+    tipo: tipo as "NECESIDAD_URGENTE" | "INSUMO_SATURADO",
+    mensaje,
+    metadata: {
+      expiresAt,
+      createdBy: "moderacion_manual",
+      duracionHoras,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/moderacion");
+  return actionSuccess("alerta-creada");
+}
+
+export async function eliminarAlertaModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const alertaId = String(formData.get("alertaId") ?? "").trim();
+  const centroId = String(formData.get("centroId") ?? "").trim();
+  if (!alertaId || !centroId) {
+    return actionError("datos-invalidos");
+  }
+
+  const supabase = requireSupabaseServiceClient();
+  const { error } = await supabase
+    .from("alertas_centro")
+    .delete()
+    .eq("id", alertaId)
+    .eq("centro_id", centroId);
+
+  if (error) {
+    console.error("Error eliminando alerta:", error.message);
+    return actionError("error-guardar");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/moderacion");
+  return actionSuccess("alerta-eliminada");
 }
 
 export async function ocultarCentro(formData: FormData): Promise<ActionResult> {

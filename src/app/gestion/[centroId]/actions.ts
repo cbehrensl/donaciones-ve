@@ -7,6 +7,7 @@ import {
   type ActionResult,
 } from "@/lib/action-feedback";
 import { getCentroForManagement, mapUrgenciaToDb } from "@/lib/data";
+import { aplicarActualizacionNecesidad } from "@/lib/moderacion-updates";
 import { requireSupabaseServiceClient } from "@/lib/supabase";
 import type { TipoInsumo, Urgencia } from "@/lib/types";
 
@@ -194,31 +195,19 @@ export async function agregarNecesidad(
     return actionError("acceso-denegado");
   }
 
-  const supabase = requireSupabaseServiceClient();
-  const { data: categoria } = await supabase
-    .from("categorias_insumo")
-    .select("id")
-    .eq("nombre", tipoInsumo)
-    .eq("activo", true)
-    .maybeSingle();
-
-  if (!categoria || !["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)) {
+  if (!["URGENTE", "MEDIA", "SATURADO"].includes(urgencia)) {
     return actionError("datos-invalidos");
   }
 
-  const { error } = await supabase.from("necesidades").upsert(
-    {
-      centro_id: centroId,
-      categoria_id: categoria.id,
-      nivel_urgencia: mapUrgenciaToDb(urgencia),
-      descripcion: detalle,
-      activo: true,
-    },
-    { onConflict: "centro_id,categoria_id" },
-  );
+  const result = await aplicarActualizacionNecesidad({
+    centroId,
+    categoriaInsumo: tipoInsumo,
+    urgencia,
+    detalle,
+    origen: "manual",
+  });
 
-  if (error) {
-    console.error("Error agregando necesidad:", error.message);
+  if (!result.ok) {
     return actionError("error-guardar");
   }
 

@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { SnackbarForm } from "@/components/SnackbarForm";
 import { SnackbarShell } from "@/components/SnackbarShell";
+import { ModeradorChatbot } from "@/components/chatbots/ModeradorChatbot";
+import {
+  agruparAlertasActivasPorCentro,
+  calcularSemaforoDesdeAlertas,
+} from "@/lib/alertas";
 import {
   getCategoriasInsumo,
+  getAlertasRecientes,
   getCentrosParaModeracion,
   getResumenModeracion,
 } from "@/lib/data";
@@ -16,15 +22,14 @@ import {
 } from "@/lib/supabase";
 import {
   SEMAFORO_DOT,
-  SEMAFORO_LABELS,
-  calcularSemafaro,
 } from "@/lib/semaforo";
 import type { SemafaroEstado } from "@/lib/types";
 import {
   agregarNecesidadModeracion,
   actualizarDetallesCentroModeracion,
-  actualizarUrgencia,
   actualizarVerificacion,
+  crearAlertaModeracion,
+  eliminarAlertaModeracion,
   eliminarNecesidadModeracion,
   mostrarCentro,
   ocultarCentro,
@@ -56,6 +61,35 @@ const VERIFICACION_OPTIONS = [
   { value: "verificados", label: "Verificados" },
 ];
 
+const ALERTA_UI = {
+  NECESIDAD_URGENTE: {
+    label: "Solicitud urgente",
+    icon: "🚨",
+    classes: "border-red-200 bg-red-50 text-red-900",
+  },
+  INSUMO_SATURADO: {
+    label: "Saturación reportada",
+    icon: "✅",
+    classes: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  },
+  ACTUALIZACION_CENTRO: {
+    label: "Actualización",
+    icon: "ℹ️",
+    classes: "border-blue-200 bg-blue-50 text-blue-900",
+  },
+} as const;
+
+function formatAlertTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Hace instantes";
+  }
+  return date.toLocaleTimeString("es-VE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function getEstatusLabel(estatus?: string): string {
   if (estatus === "cerrado") return "Oculto";
   if (estatus === "sin_verificar") return "Sin verificar";
@@ -86,7 +120,7 @@ export default async function ModeracionPage({
   const hasToken = Boolean(getModeratorAccessToken());
   const hasSupabaseService = isSupabaseServiceConfigured();
   const isAuthorized = isModeratorTokenValid(token);
-  const [centrosResponse, resumen, categoriasInsumo] =
+  const [centrosResponse, resumen, categoriasInsumo, alertasRecientes] =
     isAuthorized && hasSupabaseService
       ? await Promise.all([
           getCentrosParaModeracion({
@@ -98,6 +132,7 @@ export default async function ModeracionPage({
           }),
           getResumenModeracion(),
           getCategoriasInsumo(),
+          getAlertasRecientes(200),
         ])
       : [
           {
@@ -118,22 +153,23 @@ export default async function ModeracionPage({
             urgencias: 0,
           },
           [],
+          [],
         ];
   const centros = centrosResponse.centros;
   const meta = centrosResponse.meta;
+  const alertasActivas = alertasRecientes;
+  const alertasPorCentro = agruparAlertasActivasPorCentro(alertasActivas);
   const centrosVisibles = centros.filter((centro) => centro.estatus !== "cerrado");
   const centrosPendientes = centrosVisibles.filter((centro) => !centro.verificado);
   const centrosConNecesidades = centrosVisibles.filter(
     (centro) => (centro.necesidades ?? []).length > 0,
   );
-  const necesidadesUrgentes = centrosVisibles.reduce(
-    (total, centro) =>
-      total +
-      (centro.necesidades ?? []).filter(
-        (necesidad) => necesidad.urgencia === "URGENTE",
-      ).length,
-    0,
-  );
+  const alertasUrgentes = alertasActivas.filter(
+    (alerta) => alerta.tipo === "NECESIDAD_URGENTE",
+  ).length;
+  const alertasSaturacion = alertasActivas.filter(
+    (alerta) => alerta.tipo === "INSUMO_SATURADO",
+  ).length;
   const centrosSinNecesidades = centrosVisibles.filter(
     (centro) => (centro.necesidades ?? []).length === 0,
   ).length;
@@ -152,12 +188,11 @@ export default async function ModeracionPage({
   )
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
-  const insumosUrgentes = Array.from(
-    centrosVisibles
-      .flatMap((centro) => centro.necesidades ?? [])
-      .filter((necesidad) => necesidad.urgencia === "URGENTE")
-      .reduce((map, necesidad) => {
-        map.set(necesidad.tipo_insumo, (map.get(necesidad.tipo_insumo) ?? 0) + 1);
+  const centrosConMasAlertas = Array.from(
+    alertasActivas
+      .reduce((map, alerta) => {
+        const nombreCentro = alerta.centros_acopio?.nombre ?? "Centro sin nombre";
+        map.set(nombreCentro, (map.get(nombreCentro) ?? 0) + 1);
         return map;
       }, new Map<string, number>())
       .entries(),
@@ -194,8 +229,8 @@ export default async function ModeracionPage({
           Dashboard de centros de acopio
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Revisa centros nuevos, verifica información y ajusta necesidades
-          reportadas.
+          Revisa centros nuevos, verifica información y publica alertas de
+          urgencia o saturación para orientar donaciones.
         </p>
         <Link href="/" className="cta-secondary mt-3 inline-block text-sm font-semibold">
           Volver a la vista pública
@@ -253,6 +288,38 @@ export default async function ModeracionPage({
       ) : (
         <SnackbarShell>
         <section className="space-y-6">
+          <ModeradorChatbot token={token} />
+
+          {alertasRecientes.length > 0 ? (
+            <section className="rounded-xl border border-zinc-200 bg-white p-3">
+              <h2 className="text-xs font-black uppercase tracking-wide text-zinc-900">
+                Alertas recientes
+              </h2>
+              <p className="mt-1 text-xs text-zinc-600">
+                Solicitudes urgentes y saturaciones reportadas por los equipos.
+              </p>
+              <ul className="mt-2 space-y-2 text-sm">
+                {alertasRecientes.slice(0, 6).map((alerta) => (
+                  <li key={alerta.id} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-2">
+                    <div
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black uppercase tracking-wide ${ALERTA_UI[alerta.tipo].classes}`}
+                    >
+                      <span aria-hidden>{ALERTA_UI[alerta.tipo].icon}</span>
+                      {ALERTA_UI[alerta.tipo].label}
+                    </div>
+                    <p className="mt-1 font-bold text-zinc-900">
+                      {alerta.centros_acopio?.nombre ?? "Centro"}
+                    </p>
+                    <p className="text-zinc-700">{alerta.mensaje}</p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Reportado a las {formatAlertTime(alerta.created_at)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           <div className="grid grid-cols-3 gap-2 lg:grid-cols-6 lg:gap-3">
             <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
@@ -288,10 +355,10 @@ export default async function ModeracionPage({
             </div>
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-red-700">
-                Urgencias
+                Alertas urgentes
               </p>
               <p className="mt-1 text-2xl font-black tabular-nums text-red-900 lg:text-3xl">
-                {resumen.urgencias}
+                {alertasUrgentes}
               </p>
             </div>
             <div className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-3 shadow-sm">
@@ -308,7 +375,7 @@ export default async function ModeracionPage({
             <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-black uppercase tracking-wide text-zinc-700">
               <span>Resumen e insights</span>
               <span className="text-xs font-semibold normal-case tracking-normal text-zinc-500">
-                {tasaVerificacion}% verificado · {necesidadesUrgentes} urgentes · {centrosPendientes.length} pendientes
+                {tasaVerificacion}% verificado · {alertasUrgentes} urgentes · {alertasSaturacion} saturadas
               </span>
             </summary>
             <div className="grid gap-4 border-t border-zinc-100 p-4 lg:grid-cols-3">
@@ -344,19 +411,19 @@ export default async function ModeracionPage({
               </div>
               <div>
                 <h3 className="text-xs font-black uppercase tracking-wide text-zinc-500">
-                  Insumos críticos
+                  Centros con más alertas activas
                 </h3>
-                {insumosUrgentes.length > 0 ? (
+                {centrosConMasAlertas.length > 0 ? (
                   <ul className="mt-2 space-y-1 text-sm text-zinc-700">
-                    {insumosUrgentes.map(([insumo, total]) => (
-                      <li key={insumo} className="flex justify-between gap-2">
-                        <span>{insumo}</span>
+                    {centrosConMasAlertas.map(([centroNombre, total]) => (
+                      <li key={centroNombre} className="flex justify-between gap-2">
+                        <span>{centroNombre}</span>
                         <strong className="text-red-700">{total}</strong>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm text-zinc-500">Sin urgentes.</p>
+                  <p className="mt-2 text-sm text-zinc-500">Sin alertas activas.</p>
                 )}
               </div>
             </div>
@@ -448,12 +515,13 @@ export default async function ModeracionPage({
           ) : (
             <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white shadow-sm">
             {centrosFiltrados.map((centro) => {
-              const semaforo: SemafaroEstado = calcularSemafaro(
-                centro.necesidades ?? [],
-              );
+              const alertasCentro = alertasPorCentro.get(centro.id) ?? [];
+              const semaforo: SemafaroEstado = calcularSemaforoDesdeAlertas(alertasCentro);
               const estaOculto = centro.estatus === "cerrado";
               const necesidades = centro.necesidades ?? [];
-              const urgentCount = necesidades.filter(n => n.urgencia === "URGENTE").length;
+              const urgentCount = alertasCentro.filter(
+                (alerta) => alerta.tipo === "NECESIDAD_URGENTE",
+              ).length;
 
               return (
                 <article
@@ -549,9 +617,101 @@ export default async function ModeracionPage({
                   {!estaOculto ? (
                     <details className="border-t border-zinc-50">
                       <summary className="cursor-pointer px-4 py-2 text-xs font-bold uppercase tracking-wide text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600">
-                        Gestionar · {necesidades.length} insumo{necesidades.length !== 1 ? "s" : ""}
+                        Gestionar · {necesidades.length} insumo{necesidades.length !== 1 ? "s" : ""} · {alertasCentro.length} alerta{alertasCentro.length !== 1 ? "s" : ""}
                       </summary>
                       <div className="space-y-3 px-4 pb-4">
+                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5">
+                          <div className="mb-2 flex items-center justify-between">
+                            <h3 className="text-xs font-black uppercase tracking-wide text-zinc-500">
+                              Alertas activas del centro
+                            </h3>
+                            <span className="text-[11px] font-bold text-zinc-500">
+                              {alertasCentro.length} activa{alertasCentro.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                          {alertasCentro.length > 0 ? (
+                            <ul className="space-y-2">
+                              {alertasCentro.map((alerta) => (
+                                <li
+                                  key={alerta.id}
+                                  className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-zinc-200 bg-white px-2 py-2"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <span
+                                      className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                        alerta.tipo === "NECESIDAD_URGENTE"
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-emerald-100 text-emerald-800"
+                                      }`}
+                                    >
+                                      {alerta.tipo === "NECESIDAD_URGENTE"
+                                        ? "Urgencia"
+                                        : "Saturación"}
+                                    </span>
+                                    <p className="mt-1 text-xs text-zinc-700">{alerta.mensaje}</p>
+                                  </div>
+                                  <SnackbarForm action={eliminarAlertaModeracion}>
+                                    <input type="hidden" name="token" value={token} />
+                                    <input type="hidden" name="centroId" value={centro.id} />
+                                    <input type="hidden" name="alertaId" value={alerta.id} />
+                                    <button
+                                      type="submit"
+                                      className="rounded border border-red-200 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-50"
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </SnackbarForm>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-zinc-500">
+                              No hay alertas activas para este centro.
+                            </p>
+                          )}
+                          <SnackbarForm
+                            action={crearAlertaModeracion}
+                            className="mt-2 grid gap-2 rounded-md border border-dashed border-zinc-200 bg-white p-2"
+                          >
+                            <input type="hidden" name="token" value={token} />
+                            <input type="hidden" name="centroId" value={centro.id} />
+                            <div className="grid gap-2 sm:grid-cols-[1fr_140px]">
+                              <select
+                                name="tipo"
+                                defaultValue="NECESIDAD_URGENTE"
+                                className="rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
+                              >
+                                <option value="NECESIDAD_URGENTE">Solicitud urgente</option>
+                                <option value="INSUMO_SATURADO">Alerta de saturación</option>
+                              </select>
+                              <select
+                                name="duracion_horas"
+                                defaultValue="24"
+                                className="rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
+                              >
+                                <option value="6">6 horas</option>
+                                <option value="12">12 horas</option>
+                                <option value="24">24 horas</option>
+                                <option value="72">3 días</option>
+                                <option value="indefinida">Indefinida</option>
+                              </select>
+                            </div>
+                            <input
+                              name="mensaje"
+                              placeholder="Escribe el mensaje que verán los donantes"
+                              className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
+                              maxLength={220}
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className="w-full rounded bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800 sm:w-auto"
+                            >
+                              Publicar alerta
+                            </button>
+                          </SnackbarForm>
+                        </div>
+
                         {/* Needs list */}
                         {necesidades.length > 0 ? (
                           <div className="overflow-x-auto">
@@ -559,7 +719,6 @@ export default async function ModeracionPage({
                               <thead>
                                 <tr className="border-b border-zinc-100 text-left text-xs font-bold uppercase tracking-wide text-zinc-400">
                                   <th className="pb-1.5 pr-3">Insumo</th>
-                                  <th className="pb-1.5 pr-3">Urgencia</th>
                                   <th className="pb-1.5"></th>
                                 </tr>
                               </thead>
@@ -571,36 +730,6 @@ export default async function ModeracionPage({
                                       {necesidad.detalle ? (
                                         <span className="ml-1 text-xs text-zinc-400">{necesidad.detalle}</span>
                                       ) : null}
-                                    </td>
-                                    <td className="py-1.5 pr-3">
-                                      <SnackbarForm
-                                        action={actualizarUrgencia}
-                                        className="flex items-center gap-1"
-                                      >
-                                        <input type="hidden" name="token" value={token} />
-                                        <input type="hidden" name="necesidadId" value={necesidad.id} />
-                                        <select
-                                          name="urgencia"
-                                          defaultValue={necesidad.urgencia}
-                                          className={`rounded border px-1.5 py-0.5 text-xs font-bold ${
-                                            necesidad.urgencia === "URGENTE"
-                                              ? "border-red-200 bg-red-50 text-red-700"
-                                              : necesidad.urgencia === "MEDIA"
-                                              ? "border-amber-200 bg-amber-50 text-amber-700"
-                                              : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                          }`}
-                                        >
-                                          <option value="URGENTE">Urgente</option>
-                                          <option value="MEDIA">Media</option>
-                                          <option value="SATURADO">Saturado</option>
-                                        </select>
-                                        <button
-                                          type="submit"
-                                          className="rounded bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100"
-                                        >
-                                          OK
-                                        </button>
-                                      </SnackbarForm>
                                     </td>
                                     <td className="py-1.5 text-right">
                                       <SnackbarForm action={eliminarNecesidadModeracion}>
@@ -640,15 +769,6 @@ export default async function ModeracionPage({
                             {categoriasInsumo.map((cat) => (
                               <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                             ))}
-                          </select>
-                          <select
-                            name="urgencia"
-                            defaultValue="MEDIA"
-                            className="rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
-                          >
-                            <option value="URGENTE">Urgente</option>
-                            <option value="MEDIA">Media</option>
-                            <option value="SATURADO">Saturado</option>
                           </select>
                           <input
                             name="detalle"

@@ -1,21 +1,21 @@
 import { CopyTextButton } from "@/components/CopyTextButton";
+import { calcularSemaforoDesdeAlertas } from "@/lib/alertas";
 import { formatCentroPlainText } from "@/lib/data";
 import {
   SEMAFORO_DOT,
   SEMAFORO_LABELS,
   SEMAFORO_STYLES,
-  calcularSemafaro,
-  URGENCIA_STYLES,
 } from "@/lib/semaforo";
-import type { CentroAcopio, SemafaroEstado } from "@/lib/types";
+import type { AlertaCentro, CentroAcopio, SemafaroEstado } from "@/lib/types";
 
 interface CentroCardProps {
   centro: CentroAcopio;
+  alertasActivas?: AlertaCentro[];
 }
 
-export function CentroCard({ centro }: CentroCardProps) {
+export function CentroCard({ centro, alertasActivas = [] }: CentroCardProps) {
   const necesidades = centro.necesidades ?? [];
-  const semaforo: SemafaroEstado = calcularSemafaro(necesidades);
+  const semaforo: SemafaroEstado = calcularSemaforoDesdeAlertas(alertasActivas);
   const municipio = centro.municipios?.nombre ?? "Sin municipio";
   const plainText = formatCentroPlainText(centro);
   const disponibilidadFechas =
@@ -55,6 +55,28 @@ export function CentroCard({ centro }: CentroCardProps) {
           </div>
         ) : null}
       </header>
+
+      {alertasActivas.length > 0 ? (
+        <div className="mb-5 space-y-2 rounded-xl border border-zinc-200 bg-white/70 p-3">
+          {alertasActivas.slice(0, 2).map((alerta) => (
+            <div
+              key={alerta.id}
+              className={`rounded-lg border px-2.5 py-2 text-xs ${
+                alerta.tipo === "NECESIDAD_URGENTE"
+                  ? "border-red-200 bg-red-50 text-red-900"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-900"
+              }`}
+            >
+              <p className="font-black uppercase tracking-wide">
+                {alerta.tipo === "NECESIDAD_URGENTE"
+                  ? "Solicitud urgente activa"
+                  : "Alerta de saturación activa"}
+              </p>
+              <p className="mt-1 font-medium">{alerta.mensaje}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mb-6 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
         <div className="flex items-start gap-3 rounded-xl bg-white/40 p-3 ring-1 ring-zinc-900/5">
@@ -120,14 +142,14 @@ export function CentroCard({ centro }: CentroCardProps) {
       <div className="mb-6">
         <h3 className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
           <span className="h-px w-4 bg-zinc-300" />
-          Insumos requeridos
+          Insumos que recibe este centro
         </h3>
         {necesidades.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {necesidades.map((item) => (
               <div
                 key={item.id}
-                className={`flex flex-col rounded-xl border px-3 py-2 transition-colors ${URGENCIA_STYLES[item.urgencia]} ring-1 ring-inset ring-black/5`}
+                className="flex flex-col rounded-xl border border-zinc-200 bg-white px-3 py-2 ring-1 ring-inset ring-black/5"
               >
                 <span className="text-xs font-black tracking-tight">{item.tipo_insumo}</span>
                 {item.detalle && (

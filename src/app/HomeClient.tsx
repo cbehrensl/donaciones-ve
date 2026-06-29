@@ -5,8 +5,15 @@ import { useState } from "react";
 import { CentroGrupoEstado } from "@/components/CentroGrupoEstado";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { SpotlightTour } from "@/components/SpotlightTour";
-import { calcularSemafaroGrupo, SEMAFORO_PRIORITY } from "@/lib/semaforo";
+import { PublicSearchChatbot } from "@/components/chatbots/PublicSearchChatbot";
+import {
+  agruparAlertasActivasPorCentro,
+  calcularSemaforoDesdeAlertas,
+  filtrarAlertasActivas,
+} from "@/lib/alertas";
+import { SEMAFORO_PRIORITY } from "@/lib/semaforo";
 import type {
+  AlertaCentro,
   CentroAcopio,
   ContactoEmergencia,
   DataLoadError,
@@ -25,9 +32,42 @@ interface GrupoEstado {
   defaultOpen: boolean;
 }
 
+const ALERTA_UI: Record<
+  AlertaCentro["tipo"],
+  { label: string; icon: string; classes: string }
+> = {
+  NECESIDAD_URGENTE: {
+    label: "Solicitud urgente",
+    icon: "🚨",
+    classes: "border-red-200 bg-red-50 text-red-900",
+  },
+  INSUMO_SATURADO: {
+    label: "Alerta de saturación",
+    icon: "✅",
+    classes: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  },
+  ACTUALIZACION_CENTRO: {
+    label: "Actualización de centro",
+    icon: "ℹ️",
+    classes: "border-blue-200 bg-blue-50 text-blue-900",
+  },
+};
+
+function formatAlertTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Hace instantes";
+  }
+  return date.toLocaleTimeString("es-VE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function agruparCentrosPorEstado(
   centros: CentroAcopio[],
   estados: Estado[],
+  alertasPorCentro: Map<string, AlertaCentro[]>,
   hayFiltroActivo: boolean,
 ): GrupoEstado[] {
   const estadosMap = new Map(estados.map((e) => [e.id, e.nombre]));
@@ -45,7 +85,9 @@ function agruparCentrosPorEstado(
       estadoId === "__sin_estado__"
         ? "Sin estado"
         : (estadosMap.get(estadoId) ?? "Desconocido");
-    const semaforo = calcularSemafaroGrupo(centrosGrupo);
+    const semaforo = calcularSemaforoDesdeAlertas(
+      centrosGrupo.flatMap((centro) => alertasPorCentro.get(centro.id) ?? []),
+    );
     grupos.push({
       estadoId,
       nombre,
@@ -69,6 +111,7 @@ interface HomeClientProps {
   municipios: Municipio[];
   centros: CentroAcopio[];
   contactosEmergencia: ContactoEmergencia[];
+  alertas: AlertaCentro[];
   initialFilters: HomeSearchFilters;
   searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
@@ -79,12 +122,15 @@ export function HomeClient({
   municipios,
   centros,
   contactosEmergencia,
+  alertas,
   initialFilters,
   searchMeta,
   errors,
 }: HomeClientProps) {
   const [estadoId, setEstadoId] = useState(initialFilters.estadoId);
   const [municipioId, setMunicipioId] = useState(initialFilters.municipioId);
+  const alertasActivas = filtrarAlertasActivas(alertas);
+  const alertasPorCentro = agruparAlertasActivasPorCentro(alertasActivas);
   const tourSteps = [
     {
       targetId: "tour-actions",
@@ -135,7 +181,12 @@ export function HomeClient({
   const hayFiltroActivo = Boolean(
     initialFilters.estadoId || initialFilters.municipioId || initialFilters.q,
   );
-  const grupos = agruparCentrosPorEstado(centros, estados, hayFiltroActivo);
+  const grupos = agruparCentrosPorEstado(
+    centros,
+    estados,
+    alertasPorCentro,
+    hayFiltroActivo,
+  );
 
   const telefonosHref = (telefono: string) =>
     `tel:${telefono.replace(/[^\d+]/g, "")}`;
@@ -314,6 +365,38 @@ export function HomeClient({
         )}
       </details>
 
+      {alertasActivas.length > 0 ? (
+        <section className="mb-8 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-900">
+            Alertas recientes
+          </h2>
+          <p className="mt-1 text-xs text-zinc-600">
+            Reportes en vivo de solicitudes urgentes y saturación de insumos.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {alertasActivas.slice(0, 5).map((alerta) => (
+              <li key={alerta.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 text-sm">
+                <div
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black uppercase tracking-wide ${ALERTA_UI[alerta.tipo].classes}`}
+                >
+                  <span aria-hidden>{ALERTA_UI[alerta.tipo].icon}</span>
+                  {ALERTA_UI[alerta.tipo].label}
+                </div>
+                <p className="font-bold text-zinc-900">
+                  {alerta.centros_acopio?.nombre ?? "Centro sin nombre"}
+                </p>
+                <p className="text-zinc-700">{alerta.mensaje}</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Reportado a las {formatAlertTime(alerta.created_at)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <PublicSearchChatbot />
+
       <div id="tour-filters" className="-mx-4 mb-8 bg-zinc-50 px-4 py-4 sm:mx-0 sm:rounded-2xl sm:border sm:border-zinc-200 sm:bg-white sm:p-6 sm:shadow-xl sm:shadow-zinc-200/50">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500 sm:text-xs">
           Buscar centros registrados
@@ -393,6 +476,8 @@ export function HomeClient({
               key={grupo.estadoId}
               nombreEstado={grupo.nombre}
               centros={grupo.centros}
+              semaforo={grupo.semaforo}
+              alertasPorCentro={alertasPorCentro}
               defaultOpen={grupo.defaultOpen}
             />
           ))

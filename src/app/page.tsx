@@ -23,6 +23,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     municipios,
     centros,
     contactosEmergencia,
+    alertas,
     searchMeta,
     errors,
   } = await getHomeDataWithFilters(filters);
@@ -33,6 +34,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       municipios={municipios}
       centros={centros}
       contactosEmergencia={contactosEmergencia}
+      alertas={alertas}
       initialFilters={filters}
       searchMeta={searchMeta}
       errors={errors}
