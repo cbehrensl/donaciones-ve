@@ -15,7 +15,9 @@ interface CentroCardProps {
 
 export function CentroCard({ centro, alertasActivas = [] }: CentroCardProps) {
   const necesidades = centro.necesidades ?? [];
-  const semaforo: SemafaroEstado = calcularSemaforoDesdeAlertas(alertasActivas);
+  const semaforo: SemafaroEstado = calcularSemaforoDesdeAlertas(alertasActivas, {
+    hasInsumos: necesidades.length > 0,
+  });
   const municipio = centro.municipios?.nombre ?? "Sin municipio";
   const plainText = formatCentroPlainText(centro);
   const disponibilidadFechas =
@@ -39,13 +41,15 @@ export function CentroCard({ centro, alertasActivas = [] }: CentroCardProps) {
               </span>
             )}
           </h2>
-          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-current bg-white/50 px-2 py-1 text-[10px] font-black uppercase tracking-tighter sm:text-xs">
-            <span
-              aria-hidden
-              className={`inline-block h-2 w-2 rounded-full ${SEMAFORO_DOT[semaforo]}`}
-            />
-            {SEMAFORO_LABELS[semaforo]}
-          </div>
+          {semaforo !== "SIN_DATOS" ? (
+            <div className="flex shrink-0 items-center gap-2 rounded-lg border border-current bg-white/50 px-2 py-1 text-[10px] font-black uppercase tracking-tighter sm:text-xs">
+              <span
+                aria-hidden
+                className={`inline-block h-2 w-2 rounded-full ${SEMAFORO_DOT[semaforo]}`}
+              />
+              {SEMAFORO_LABELS[semaforo]}
+            </div>
+          ) : null}
         </div>
         <p className="text-sm font-bold tracking-tight text-zinc-500">{municipio}</p>
         {!centro.verificado ? (

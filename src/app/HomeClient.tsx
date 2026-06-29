@@ -87,6 +87,11 @@ function agruparCentrosPorEstado(
         : (estadosMap.get(estadoId) ?? "Desconocido");
     const semaforo = calcularSemaforoDesdeAlertas(
       centrosGrupo.flatMap((centro) => alertasPorCentro.get(centro.id) ?? []),
+      {
+        hasInsumos: centrosGrupo.some(
+          (centro) => (centro.necesidades ?? []).length > 0,
+        ),
+      },
     );
     grupos.push({
       estadoId,

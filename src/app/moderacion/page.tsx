@@ -516,7 +516,9 @@ export default async function ModeracionPage({
             <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white shadow-sm">
             {centrosFiltrados.map((centro) => {
               const alertasCentro = alertasPorCentro.get(centro.id) ?? [];
-              const semaforo: SemafaroEstado = calcularSemaforoDesdeAlertas(alertasCentro);
+              const semaforo: SemafaroEstado = calcularSemaforoDesdeAlertas(alertasCentro, {
+                hasInsumos: (centro.necesidades ?? []).length > 0,
+              });
               const estaOculto = centro.estatus === "cerrado";
               const necesidades = centro.necesidades ?? [];
               const urgentCount = alertasCentro.filter(

@@ -75,6 +75,7 @@ export function agruparAlertasActivasPorCentro(
 
 export function calcularSemaforoDesdeAlertas(
   alertas: AlertaCentro[],
+  options?: { hasInsumos?: boolean },
 ): SemafaroEstado {
   if (alertas.some((a) => a.tipo === "NECESIDAD_URGENTE")) {
     return "URGENTE";
@@ -82,6 +83,10 @@ export function calcularSemaforoDesdeAlertas(
 
   if (alertas.some((a) => a.tipo === "INSUMO_SATURADO")) {
     return "SATURADO";
+  }
+
+  if (options?.hasInsumos) {
+    return "MEDIA";
   }
 
   return "SIN_DATOS";
