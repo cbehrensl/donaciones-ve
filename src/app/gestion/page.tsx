@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GestionLoginForm } from "@/app/gestion/GestionLoginForm";
+import { OwnerNav } from "@/components/navigation/OwnerNav";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 interface GestionLoginPageProps {
@@ -13,10 +14,8 @@ export default async function GestionLoginPage({
 
   return (
     <div className="mx-auto min-h-screen max-w-lg px-4 py-8">
+      <OwnerNav />
       <header className="mb-8 text-center">
-        <Link href="/" className="text-sm underline">
-          ← Volver al inicio
-        </Link>
         <h1 className="mt-4 text-2xl font-bold">Administrar mi centro</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Ingresa el código que recibiste al registrar tu centro de acopio.
@@ -33,7 +32,7 @@ export default async function GestionLoginPage({
 
       <p className="mt-6 text-center text-sm text-zinc-600">
         ¿Aún no tienes centro?{" "}
-        <Link href="/centros/nuevo" className="font-semibold underline">
+        <Link href="/centros/nuevo" className="font-semibold text-blue-700 transition hover:text-blue-900">
           Registrar centro de acopio
         </Link>
       </p>

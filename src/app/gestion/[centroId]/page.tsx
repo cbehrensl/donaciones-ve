@@ -8,6 +8,7 @@ import {
 } from "@/app/gestion/[centroId]/actions";
 import { SnackbarForm } from "@/components/SnackbarForm";
 import { SnackbarShell } from "@/components/SnackbarShell";
+import { OwnerNav } from "@/components/navigation/OwnerNav";
 import { getCentroForManagement } from "@/lib/data";
 import { URGENCIA_STYLES } from "@/lib/semaforo";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -68,18 +69,11 @@ export default async function GestionCentroPage({
   return (
     <SnackbarShell>
     <div className="mx-auto min-h-screen max-w-2xl px-4 py-6">
+      <OwnerNav />
       <header className="mb-6 border-b border-zinc-200 pb-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-sm font-bold uppercase tracking-wide text-zinc-500">
-            Panel del responsable
-          </p>
-          <Link
-            href="/"
-            className="cta-secondary shrink-0 rounded border border-zinc-300 px-3 py-1.5 text-xs font-semibold"
-          >
-            Inicio
-          </Link>
-        </div>
+        <p className="mb-2 text-sm font-bold uppercase tracking-wide text-zinc-500">
+          Panel del responsable
+        </p>
         <h1 className="text-2xl font-bold leading-tight">{centro.nombre}</h1>
         <p className="mt-1 text-sm text-zinc-600">
           {centro.municipios?.nombre} · {centro.direccion}

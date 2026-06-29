@@ -173,12 +173,12 @@ export function PublicSearchChatbot() {
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                 Asistente virtual
               </p>
-              <h2 className="text-sm font-black">Dónde donar ahora</h2>
+              <h2 className="text-sm font-black text-white">Dónde donar ahora</h2>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="rounded bg-white/10 px-2 py-1 text-xs font-bold hover:bg-white/20"
+              className="rounded bg-white/10 px-2 py-1 text-xs font-bold text-white hover:bg-white/20"
             >
               Cerrar
             </button>

@@ -1,4 +1,5 @@
-import { getHomeDataWithFilters } from "@/lib/data";
+import { redirect } from "next/navigation";
+import { getHubPublicData } from "@/lib/data";
 import { HomeClient } from "./HomeClient";
 import { DonationLinksGrid } from "@/components/donations/DonationLinksGrid";
 
@@ -12,33 +13,33 @@ interface HomePageProps {
   }>;
 }
 
+function hasCentrosQueryParams(params: {
+  q?: string;
+  estado?: string;
+  municipio?: string;
+}): boolean {
+  return Boolean(
+    params.q?.trim() || params.estado?.trim() || params.municipio?.trim(),
+  );
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
-  const filters = {
-    q: params.q?.trim() ?? "",
-    estadoId: params.estado?.trim() ?? "",
-    municipioId: params.municipio?.trim() ?? "",
-  };
-  const {
-    estados,
-    municipios,
-    centros,
-    contactosEmergencia,
-    alertas,
-    searchMeta,
-    errors,
-  } = await getHomeDataWithFilters(filters);
+
+  if (hasCentrosQueryParams(params)) {
+    const query = new URLSearchParams();
+    if (params.q?.trim()) query.set("q", params.q.trim());
+    if (params.estado?.trim()) query.set("estado", params.estado.trim());
+    if (params.municipio?.trim()) query.set("municipio", params.municipio.trim());
+    redirect(`/centros?${query.toString()}`);
+  }
+
+  const { contactosEmergencia, errors } = await getHubPublicData();
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
       <HomeClient
-        estados={estados}
-        municipios={municipios}
-        centros={centros}
         contactosEmergencia={contactosEmergencia}
-        alertas={alertas}
-        initialFilters={filters}
-        searchMeta={searchMeta}
         errors={errors}
         donationsSlot={<DonationLinksGrid />}
       />

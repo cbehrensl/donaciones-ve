@@ -3,6 +3,18 @@
 import { requireSupabaseServiceClient, createSupabaseClient } from "@/lib/supabase";
 import { DonationLink } from "@/lib/types";
 import { revalidatePath } from "next/cache";
+import { isModeratorTokenValid } from "@/lib/moderacion-auth";
+
+export interface DonationAdminData {
+  total: number;
+  active: number;
+}
+
+function assertModeratorToken(token: string): void {
+  if (!isModeratorTokenValid(token)) {
+    throw new Error("No autorizado");
+  }
+}
 
 export async function getActiveDonationLinks(): Promise<DonationLink[]> {
   // Use public client since this is for public view
@@ -23,7 +35,8 @@ export async function getActiveDonationLinks(): Promise<DonationLink[]> {
   return data as DonationLink[];
 }
 
-export async function getAllDonationLinks(): Promise<DonationLink[]> {
+export async function getAllDonationLinks(token: string): Promise<DonationLink[]> {
+  assertModeratorToken(token);
   const supabase = requireSupabaseServiceClient();
 
   const { data, error } = await supabase
@@ -39,7 +52,24 @@ export async function getAllDonationLinks(): Promise<DonationLink[]> {
   return data as DonationLink[];
 }
 
-export async function toggleDonationLinkStatus(id: string, currentStatus: boolean) {
+export async function getDonationAdminData(
+  token: string,
+): Promise<DonationAdminData> {
+  assertModeratorToken(token);
+  const links = await getAllDonationLinks(token);
+
+  return {
+    total: links.length,
+    active: links.filter((link) => link.is_active).length,
+  };
+}
+
+export async function toggleDonationLinkStatus(
+  id: string,
+  currentStatus: boolean,
+  token: string,
+) {
+  assertModeratorToken(token);
   const supabase = requireSupabaseServiceClient();
 
   const { error } = await supabase
@@ -53,10 +83,12 @@ export async function toggleDonationLinkStatus(id: string, currentStatus: boolea
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/donations");
+  revalidatePath("/staff/donaciones");
 }
 
 export async function saveDonationLink(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  assertModeratorToken(token);
   const supabase = requireSupabaseServiceClient();
   
   const id = formData.get("id") as string | null;
@@ -92,10 +124,11 @@ export async function saveDonationLink(formData: FormData) {
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/donations");
+  revalidatePath("/staff/donaciones");
 }
 
-export async function deleteDonationLink(id: string) {
+export async function deleteDonationLink(id: string, token: string) {
+  assertModeratorToken(token);
   const supabase = requireSupabaseServiceClient();
 
   const { error } = await supabase
@@ -108,5 +141,5 @@ export async function deleteDonationLink(id: string) {
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/donations");
+  revalidatePath("/staff/donaciones");
 }

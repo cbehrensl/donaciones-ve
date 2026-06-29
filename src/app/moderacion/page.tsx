@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SnackbarForm } from "@/components/SnackbarForm";
 import { SnackbarShell } from "@/components/SnackbarShell";
 import { ModeradorChatbot } from "@/components/chatbots/ModeradorChatbot";
+import { StaffNav } from "@/components/navigation/StaffNav";
 import {
   agruparAlertasActivasPorCentro,
   calcularSemaforoDesdeAlertas,
@@ -221,6 +222,7 @@ export default async function ModeracionPage({
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-6">
+      {isAuthorized ? <StaffNav token={token} /> : null}
       <header className="mb-6 border-b border-zinc-200 pb-4">
         <p className="text-sm font-bold uppercase tracking-wide text-blue-800">
           Panel de moderación
@@ -236,9 +238,14 @@ export default async function ModeracionPage({
           <Link href="/" className="cta-secondary inline-block text-sm font-semibold">
             Volver a la vista pública
           </Link>
-          <Link href="/admin/donations" className="cta-secondary inline-block text-sm font-semibold">
-            Gestionar Links de Donaciones
-          </Link>
+          {isAuthorized ? (
+            <Link
+              href={`/staff/donaciones?${new URLSearchParams({ token }).toString()}`}
+              className="cta-secondary inline-block text-sm font-semibold"
+            >
+              Gestionar Links de Donaciones
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -483,7 +490,7 @@ export default async function ModeracionPage({
                 <span>
                   <strong className="text-zinc-700">{centrosFiltrados.length}</strong> centros · pág. <strong className="text-zinc-700">{page}</strong>
                 </span>
-                <Link href={clearHref} className="font-semibold text-blue-700 hover:underline">
+                <Link href={clearHref} className="font-semibold text-blue-700 transition hover:text-blue-900">
                   Limpiar
                 </Link>
               </div>

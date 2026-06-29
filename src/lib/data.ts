@@ -582,6 +582,62 @@ export async function getHomeDataWithFilters(
   };
 }
 
+export async function getHubPublicData(): Promise<{
+  contactosEmergencia: ContactoEmergencia[];
+  errors: DataLoadError[];
+}> {
+  const errors: DataLoadError[] = [];
+  const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+
+  if (!supabase) {
+    return {
+      contactosEmergencia: [],
+      errors: [
+        {
+          scope: "Configuración",
+          message:
+            "No se encontraron las variables de Supabase. Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel.",
+        },
+      ],
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("contactos_emergencia")
+    .select(
+      `
+      id,
+      nombre,
+      descripcion,
+      categoria,
+      telefonos,
+      whatsapp,
+      zona,
+      estado_id,
+      disponible_24h,
+      es_gratuito,
+      estados ( id, nombre )
+    `,
+    )
+    .eq("activo", true)
+    .order("categoria")
+    .order("nombre");
+
+  if (error) {
+    errors.push({
+      scope: "Contactos de emergencia",
+      message: `No se pudieron cargar los contactos de emergencia: ${error.message}`,
+    });
+  }
+
+  return {
+    contactosEmergencia: (data ?? []).map((row) =>
+      normalizeContactoEmergencia(row as Record<string, unknown>),
+    ),
+    errors,
+  };
+}
+
 export async function getAlertasRecientes(
   limit = 20,
   publicOnly = false,
