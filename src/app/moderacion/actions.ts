@@ -306,7 +306,16 @@ export async function crearAlertaModeracion(
     },
   });
 
+  // Bump the center's updated_at so it surfaces to the top of sorted views
+  // (public list and moderacion panel both order by updated_at DESC)
+  const supabase = requireSupabaseServiceClient();
+  await supabase
+    .from("centros_acopio")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", centroId);
+
   revalidatePath("/");
+  revalidatePath("/centros");
   revalidatePath("/moderacion");
   return actionSuccess("alerta-creada");
 }

@@ -11,6 +11,7 @@ import {
   getCategoriasInsumo,
   getAlertasRecientes,
   getCentrosParaModeracion,
+  getEstados,
   getResumenModeracion,
 } from "@/lib/data";
 import {
@@ -44,6 +45,7 @@ interface ModeracionPageProps {
     q?: string;
     estatus?: string;
     verificacion?: string;
+    estado?: string;
     page?: string;
   }>;
 }
@@ -114,6 +116,7 @@ export default async function ModeracionPage({
   const textoFiltro = params.q?.trim().toLowerCase() ?? "";
   const estatusFiltro = params.estatus ?? "todos";
   const verificacionFiltro = params.verificacion ?? "todos";
+  const estadoFiltro = params.estado ?? "";
   const page =
     Number.isFinite(Number(params.page)) && Number(params.page) > 0
       ? Math.floor(Number(params.page))
@@ -121,19 +124,21 @@ export default async function ModeracionPage({
   const hasToken = Boolean(getModeratorAccessToken());
   const hasSupabaseService = isSupabaseServiceConfigured();
   const isAuthorized = isModeratorTokenValid(token);
-  const [centrosResponse, resumen, categoriasInsumo, alertasRecientes] =
+  const [centrosResponse, resumen, categoriasInsumo, alertasRecientes, estados] =
     isAuthorized && hasSupabaseService
       ? await Promise.all([
           getCentrosParaModeracion({
             q: textoFiltro,
             estatus: estatusFiltro,
             verificacion: verificacionFiltro,
+            estadoId: estadoFiltro,
             page: page - 1,
             pageSize: PAGE_SIZE,
           }),
           getResumenModeracion(),
           getCategoriasInsumo(),
           getAlertasRecientes(200),
+          getEstados(),
         ])
       : [
           {
@@ -153,6 +158,7 @@ export default async function ModeracionPage({
             ocultos: 0,
             urgencias: 0,
           },
+          [],
           [],
           [],
         ];
@@ -209,6 +215,9 @@ export default async function ModeracionPage({
   }
   if (verificacionFiltro && verificacionFiltro !== "todos") {
     paginationParams.set("verificacion", verificacionFiltro);
+  }
+  if (estadoFiltro) {
+    paginationParams.set("estado", estadoFiltro);
   }
   const prevHref = `/moderacion?${new URLSearchParams({
     ...Object.fromEntries(paginationParams.entries()),
@@ -448,7 +457,7 @@ export default async function ModeracionPage({
           >
             <input type="hidden" name="token" value={token} />
             <input type="hidden" name="page" value="1" />
-            <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1fr_auto]">
+            <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
               <input
                 name="q"
                 type="search"
@@ -456,6 +465,18 @@ export default async function ModeracionPage({
                 placeholder="Buscar nombre, dirección, responsable..."
                 className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
               />
+              <select
+                name="estado"
+                defaultValue={estadoFiltro}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">Todos los estados</option>
+                {estados.map((estado) => (
+                  <option key={estado.id} value={estado.id}>
+                    {estado.nombre}
+                  </option>
+                ))}
+              </select>
               <select
                 name="estatus"
                 defaultValue={estatusFiltro}

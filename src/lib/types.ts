@@ -124,6 +124,7 @@ export interface ModeracionSearchFilters {
   q: string;
   estatus: string;
   verificacion: string;
+  estadoId: string;
   page: number;
   pageSize: number;
 }

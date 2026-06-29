@@ -518,7 +518,7 @@ export async function getHomeDataWithFilters(
         )
         .eq("visible_publico", true)
         .order("created_at", { ascending: false })
-        .limit(50),
+        .limit(200),
     ]);
 
   if (estadosResult.error) {
@@ -561,7 +561,7 @@ export async function getHomeDataWithFilters(
   const alertasNormalizadas = (alertasResult.data ?? []).map((row) =>
     normalizeAlertaCentro(row as Record<string, unknown>),
   );
-  const alertasActivas = filtrarAlertasActivas(alertasNormalizadas).slice(0, 8);
+  const alertasActivas = filtrarAlertasActivas(alertasNormalizadas);
 
   return {
     estados: (estadosResult.data ?? []).map((row) =>
@@ -753,6 +753,10 @@ export async function getCentrosParaModeracion(
 
   if (filters.verificacion === "verificados") {
     query = query.eq("verificado", true);
+  }
+
+  if (filters.estadoId) {
+    query = query.eq("estado_id", filters.estadoId);
   }
 
   if (searchTerm) {

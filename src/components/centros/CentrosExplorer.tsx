@@ -138,16 +138,6 @@ export function CentrosExplorer({
   const alertasActivas = filtrarAlertasActivas(alertas);
   const alertasPorCentro = agruparAlertasActivasPorCentro(alertasActivas);
 
-  // Only show alerts for centers currently visible (respects server filter)
-  const centroIdsEnVista = new Set(centros.map((c) => c.id));
-  const alertasFiltradas = alertasActivas.filter((a) =>
-    centroIdsEnVista.has(a.centro_id),
-  );
-  const alertasVisibles = mostrarTodasAlertas
-    ? alertasFiltradas
-    : alertasFiltradas.slice(0, ALERTAS_INICIALES);
-  const hayMasAlertas = alertasFiltradas.length > ALERTAS_INICIALES;
-
   const handleEstadoChange = (newEstadoId: string) => {
     setEstadoId(newEstadoId);
     setMunicipioId("");
@@ -170,6 +160,17 @@ export function CentrosExplorer({
   const hayFiltroActivo = Boolean(
     initialFilters.estadoId || initialFilters.municipioId || initialFilters.q,
   );
+
+  // With an active filter: only show alerts for the centers in view.
+  // Without a filter: show all recent active alerts so nothing is hidden.
+  const centroIdsEnVista = new Set(centros.map((c) => c.id));
+  const alertasFiltradas = hayFiltroActivo
+    ? alertasActivas.filter((a) => centroIdsEnVista.has(a.centro_id))
+    : alertasActivas;
+  const alertasVisibles = mostrarTodasAlertas
+    ? alertasFiltradas
+    : alertasFiltradas.slice(0, ALERTAS_INICIALES);
+  const hayMasAlertas = alertasFiltradas.length > ALERTAS_INICIALES;
   const grupos = agruparCentrosPorEstado(
     centros,
     estados,
