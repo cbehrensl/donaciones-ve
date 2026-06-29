@@ -235,7 +235,7 @@ export function HomeClient({
                         <a
                           key={`${contacto.id}-${telefono}`}
                           href={telefonosHref(telefono)}
-                          className="flex-1 rounded-lg bg-red-700 px-3 py-2 text-center text-sm font-bold text-white transition hover:bg-red-800"
+                          className="flex-1 rounded-lg bg-red-700 px-3 py-2 text-center text-sm font-bold !text-white transition hover:bg-red-800"
                         >
                           Llamar {telefono}
                         </a>
