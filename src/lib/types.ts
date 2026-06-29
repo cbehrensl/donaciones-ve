@@ -67,6 +67,24 @@ export interface ContactoEmergencia {
   es_gratuito: boolean;
 }
 
+export interface AlertaCentro {
+  id: string;
+  centro_id: string;
+  tipo: "NECESIDAD_URGENTE" | "INSUMO_SATURADO" | "ACTUALIZACION_CENTRO";
+  mensaje: string;
+  metadata?: Record<string, unknown> | null;
+  expires_at?: string | null;
+  created_at: string;
+  visible_publico: boolean;
+  centros_acopio?: {
+    id: string;
+    nombre: string;
+    estado_id: string | null;
+    municipio_id: string;
+    municipios?: { id: string; nombre: string; estado_id: string } | null;
+  } | null;
+}
+
 /** Datos privados del responsable; solo accesibles vía service role. */
 export interface CentroAcopioPrivado extends CentroAcopio {
   responsable_nombre: string;

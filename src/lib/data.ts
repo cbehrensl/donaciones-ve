@@ -1,10 +1,12 @@
 import { hashManagementCode } from "@/lib/gestion-code";
+import { filtrarAlertasActivas } from "@/lib/alertas";
 import {
   createSupabaseClient,
   createSupabaseServiceClient,
   requireSupabaseServiceClient,
 } from "@/lib/supabase";
 import type {
+  AlertaCentro,
   CategoriaInsumo,
   CentroAcopio,
   ContactoEmergencia,
@@ -64,6 +66,55 @@ function normalizeNecesidad(raw: Record<string, unknown>): Necesidad {
     updated_at: String(
       raw.ultima_actualizacion ?? raw.updated_at ?? new Date().toISOString(),
     ),
+  };
+}
+
+function normalizeAlertaCentro(raw: Record<string, unknown>): AlertaCentro {
+  const centroRaw = raw.centros_acopio;
+  const centro =
+    Array.isArray(centroRaw) && centroRaw.length > 0
+      ? (centroRaw[0] as Record<string, unknown>)
+      : centroRaw && !Array.isArray(centroRaw)
+        ? (centroRaw as Record<string, unknown>)
+        : null;
+  const municipioRaw = centro?.municipios;
+  const municipio =
+    Array.isArray(municipioRaw) && municipioRaw.length > 0
+      ? (municipioRaw[0] as Record<string, unknown>)
+      : municipioRaw && !Array.isArray(municipioRaw)
+        ? (municipioRaw as Record<string, unknown>)
+        : null;
+
+  return {
+    id: String(raw.id),
+    centro_id: String(raw.centro_id),
+    tipo: String(raw.tipo) as AlertaCentro["tipo"],
+    mensaje: String(raw.mensaje),
+    metadata:
+      raw.metadata && typeof raw.metadata === "object"
+        ? (raw.metadata as Record<string, unknown>)
+        : null,
+    expires_at:
+      raw.expires_at && typeof raw.expires_at === "string"
+        ? raw.expires_at
+        : null,
+    created_at: String(raw.created_at),
+    visible_publico: Boolean(raw.visible_publico),
+    centros_acopio: centro
+      ? {
+          id: String(centro.id),
+          nombre: String(centro.nombre),
+          estado_id: centro.estado_id ? String(centro.estado_id) : null,
+          municipio_id: String(centro.municipio_id),
+          municipios: municipio
+            ? {
+                id: String(municipio.id),
+                nombre: String(municipio.nombre),
+                estado_id: String(municipio.estado_id),
+              }
+            : null,
+        }
+      : null,
   };
 }
 
@@ -328,6 +379,7 @@ export async function getHomeData(): Promise<{
   municipios: Municipio[];
   centros: CentroAcopio[];
   contactosEmergencia: ContactoEmergencia[];
+  alertas: AlertaCentro[];
   searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
 }> {
@@ -341,6 +393,7 @@ export async function getHomeDataWithFilters(
   municipios: Municipio[];
   centros: CentroAcopio[];
   contactosEmergencia: ContactoEmergencia[];
+  alertas: AlertaCentro[];
   searchMeta: HomeSearchMeta;
   errors: DataLoadError[];
 }> {
@@ -355,6 +408,7 @@ export async function getHomeDataWithFilters(
       municipios: [],
       centros: [],
       contactosEmergencia: [],
+      alertas: [],
       searchMeta: { limit, reachedLimit: false },
       errors: [
         {
@@ -417,7 +471,7 @@ export async function getHomeDataWithFilters(
     );
   }
 
-  const [estadosResult, municipiosResult, centrosResult, contactosResult] =
+  const [estadosResult, municipiosResult, centrosResult, contactosResult, alertasResult] =
     await Promise.all([
       supabase.from("estados").select("id, nombre").order("nombre"),
       supabase.from("municipios").select("id, nombre, estado_id").order("nombre"),
@@ -442,6 +496,29 @@ export async function getHomeDataWithFilters(
         .eq("activo", true)
         .order("categoria")
         .order("nombre"),
+      supabase
+        .from("alertas_centro")
+        .select(
+          `
+          id,
+          centro_id,
+          tipo,
+          mensaje,
+          metadata,
+          created_at,
+          visible_publico,
+          centros_acopio (
+            id,
+            nombre,
+            estado_id,
+            municipio_id,
+            municipios ( id, nombre, estado_id )
+          )
+        `,
+        )
+        .eq("visible_publico", true)
+        .order("created_at", { ascending: false })
+        .limit(50),
     ]);
 
   if (estadosResult.error) {
@@ -472,8 +549,19 @@ export async function getHomeDataWithFilters(
     });
   }
 
+  if (alertasResult.error) {
+    errors.push({
+      scope: "Alertas",
+      message: `No se pudieron cargar las alertas recientes: ${alertasResult.error.message}`,
+    });
+  }
+
   const centrosRows = centrosResult.data ?? [];
   const reachedLimit = centrosRows.length > limit;
+  const alertasNormalizadas = (alertasResult.data ?? []).map((row) =>
+    normalizeAlertaCentro(row as Record<string, unknown>),
+  );
+  const alertasActivas = filtrarAlertasActivas(alertasNormalizadas).slice(0, 8);
 
   return {
     estados: (estadosResult.data ?? []).map((row) =>
@@ -488,9 +576,110 @@ export async function getHomeDataWithFilters(
     contactosEmergencia: (contactosResult.data ?? []).map((row) =>
       normalizeContactoEmergencia(row as Record<string, unknown>),
     ),
+    alertas: alertasActivas,
     searchMeta: { limit, reachedLimit },
     errors,
   };
+}
+
+export async function getHubPublicData(): Promise<{
+  contactosEmergencia: ContactoEmergencia[];
+  errors: DataLoadError[];
+}> {
+  const errors: DataLoadError[] = [];
+  const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+
+  if (!supabase) {
+    return {
+      contactosEmergencia: [],
+      errors: [
+        {
+          scope: "Configuración",
+          message:
+            "No se encontraron las variables de Supabase. Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel.",
+        },
+      ],
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("contactos_emergencia")
+    .select(
+      `
+      id,
+      nombre,
+      descripcion,
+      categoria,
+      telefonos,
+      whatsapp,
+      zona,
+      estado_id,
+      disponible_24h,
+      es_gratuito,
+      estados ( id, nombre )
+    `,
+    )
+    .eq("activo", true)
+    .order("categoria")
+    .order("nombre");
+
+  if (error) {
+    errors.push({
+      scope: "Contactos de emergencia",
+      message: `No se pudieron cargar los contactos de emergencia: ${error.message}`,
+    });
+  }
+
+  return {
+    contactosEmergencia: (data ?? []).map((row) =>
+      normalizeContactoEmergencia(row as Record<string, unknown>),
+    ),
+    errors,
+  };
+}
+
+export async function getAlertasRecientes(
+  limit = 20,
+  publicOnly = false,
+): Promise<AlertaCentro[]> {
+  const supabase = requireSupabaseServiceClient();
+  let query = supabase
+    .from("alertas_centro")
+    .select(
+      `
+      id,
+      centro_id,
+      tipo,
+      mensaje,
+      metadata,
+      created_at,
+      visible_publico,
+      centros_acopio (
+        id,
+        nombre,
+        estado_id,
+        municipio_id,
+        municipios ( id, nombre, estado_id )
+      )
+    `,
+    )
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 300));
+
+  if (publicOnly) {
+    query = query.eq("visible_publico", true);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error cargando alertas recientes:", error.message);
+    return [];
+  }
+
+  const normalizadas = (data ?? []).map((row) =>
+    normalizeAlertaCentro(row as Record<string, unknown>),
+  );
+  return filtrarAlertasActivas(normalizadas).slice(0, Math.max(limit, 1));
 }
 
 export async function getCategoriasInsumo(): Promise<CategoriaInsumo[]> {
@@ -808,7 +997,7 @@ export function formatCentroPlainText(centro: CentroAcopio): string {
       ? necesidades
           .map(
             (item) =>
-              `- [${item.urgencia}] ${item.tipo_insumo}${item.detalle ? `: ${item.detalle}` : ""}`,
+              `- ${item.tipo_insumo}${item.detalle ? `: ${item.detalle}` : ""}`,
           )
           .join("\n")
       : "- Sin insumos específicos reportados. Cualquier donación o apoyo será bien recibido.";
@@ -829,4 +1018,126 @@ export function formatCentroPlainText(centro: CentroAcopio): string {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+export async function buscarCentrosPorNecesidadRapida(params: {
+  insumo?: string;
+  estado?: string;
+  municipio?: string;
+  urgencia?: Urgencia;
+  limit?: number;
+}): Promise<CentroAcopio[]> {
+  const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const limit = Math.min(Math.max(params.limit ?? 8, 1), 20);
+  let estadoId: string | null = null;
+  let municipioId: string | null = null;
+
+  if (params.estado?.trim()) {
+    const { data } = await supabase
+      .from("estados")
+      .select("id")
+      .ilike("nombre", `%${params.estado.trim()}%`)
+      .limit(1);
+    estadoId = data?.[0]?.id ? String(data[0].id) : null;
+  }
+
+  if (params.municipio?.trim()) {
+    const { data } = await supabase
+      .from("municipios")
+      .select("id")
+      .ilike("nombre", `%${params.municipio.trim()}%`)
+      .limit(1);
+    municipioId = data?.[0]?.id ? String(data[0].id) : null;
+  }
+
+  let categoriaIds: string[] | null = null;
+  if (params.insumo?.trim()) {
+    const { data } = await supabase
+      .from("categorias_insumo")
+      .select("id")
+      .eq("activo", true)
+      .ilike("nombre", `%${params.insumo.trim()}%`)
+      .limit(10);
+    categoriaIds = (data ?? []).map((row) => String(row.id));
+    if (categoriaIds.length === 0) {
+      return [];
+    }
+  }
+
+  let query = supabase
+    .from("centros_acopio")
+    .select(
+      `
+      id,
+      nombre,
+      direccion,
+      municipio_id,
+      estado_id,
+      ubicacion_url,
+      telefono_contacto,
+      detalle_vias,
+      fecha_inicio_recepcion,
+      fecha_fin_recepcion,
+      horario_recepcion,
+      estatus,
+      verificado,
+      updated_at,
+      municipios ( id, nombre, estado_id ),
+      necesidades (
+        id,
+        centro_id,
+        categoria_id,
+        nivel_urgencia,
+        cantidad_estimada,
+        descripcion,
+        ultima_actualizacion,
+        activo,
+        categorias_insumo ( id, nombre )
+      )
+    `,
+    )
+    .in("estatus", ["activo", "saturado", "sin_verificar"])
+    .or("es_domicilio_privado.eq.false,es_domicilio_privado.is.null")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (estadoId) {
+    query = query.eq("estado_id", estadoId);
+  }
+  if (municipioId) {
+    query = query.eq("municipio_id", municipioId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error en busqueda rápida de centros:", error.message);
+    return [];
+  }
+
+  const centros = (data ?? []).map((row) =>
+    normalizeCentro(row as Record<string, unknown>),
+  );
+
+  return centros
+    .filter((centro) => {
+      const needs = centro.necesidades ?? [];
+      if (needs.length === 0) return false;
+
+      if (params.urgencia && !needs.some((n) => n.urgencia === params.urgencia)) {
+        return false;
+      }
+
+      if (categoriaIds) {
+        return needs.some(
+          (n) => n.categoria_id && categoriaIds?.includes(String(n.categoria_id)),
+        );
+      }
+
+      return true;
+    })
+    .slice(0, limit);
 }

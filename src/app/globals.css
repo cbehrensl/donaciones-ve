@@ -23,17 +23,7 @@ body {
 
 a {
   color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-a.cta-primary {
-  color: #ffffff !important;
-  text-decoration: none !important;
-}
-
-a.cta-secondary {
-  text-decoration: none !important;
+  text-decoration: none;
 }
 
 select,

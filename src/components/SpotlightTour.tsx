@@ -195,7 +195,7 @@ export function SpotlightTour({
               <button
                 type="button"
                 onClick={() => setStepIndex((value) => value - 1)}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold text-zinc-700"
               >
                 Atrás
               </button>

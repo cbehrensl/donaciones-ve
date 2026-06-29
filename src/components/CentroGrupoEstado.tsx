@@ -2,22 +2,25 @@
 
 import { useState } from 'react';
 import { CentroCard } from "@/components/CentroCard";
-import { calcularSemafaroGrupo, SEMAFORO_DOT, SEMAFORO_LABELS } from "@/lib/semaforo";
-import type { CentroAcopio } from "@/lib/types";
+import { SEMAFORO_DOT, SEMAFORO_LABELS } from "@/lib/semaforo";
+import type { AlertaCentro, CentroAcopio, SemafaroEstado } from "@/lib/types";
 
 interface CentroGrupoEstadoProps {
   nombreEstado: string;
   centros: CentroAcopio[];
+  semaforo: SemafaroEstado;
+  alertasPorCentro: Map<string, AlertaCentro[]>;
   defaultOpen?: boolean;
 }
 
 export function CentroGrupoEstado({
   nombreEstado,
   centros,
+  semaforo,
+  alertasPorCentro,
   defaultOpen = false,
 }: CentroGrupoEstadoProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const semaforo = calcularSemafaroGrupo(centros);
 
   return (
     <details
@@ -55,7 +58,11 @@ export function CentroGrupoEstado({
       </summary>
       <div className="space-y-4 border-t border-zinc-100 p-4 sm:p-5">
         {centros.map((centro) => (
-          <CentroCard key={centro.id} centro={centro} />
+          <CentroCard
+            key={centro.id}
+            centro={centro}
+            alertasActivas={alertasPorCentro.get(centro.id) ?? []}
+          />
         ))}
       </div>
     </details>

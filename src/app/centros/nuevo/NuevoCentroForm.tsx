@@ -64,7 +64,7 @@ export function NuevoCentroForm({
         <div className="space-y-3 text-sm text-zinc-700">
           <p>
             Usa este código en{" "}
-            <Link href="/gestion" className="font-semibold underline">
+            <Link href="/gestion" className="font-semibold text-blue-700 transition hover:text-blue-900">
               Administrar mi centro
             </Link>{" "}
             para actualizar necesidades y datos de contacto.
@@ -87,10 +87,10 @@ export function NuevoCentroForm({
             Ir a administrar ahora
           </Link>
           <Link
-            href="/"
+            href="/responsables"
             className="cta-secondary rounded-lg border border-zinc-300 px-4 py-3 text-center text-base font-bold text-zinc-800 transition-colors hover:bg-zinc-50"
           >
-            Volver al inicio
+            Ir a responsables
           </Link>
         </div>
       </div>
@@ -100,10 +100,7 @@ export function NuevoCentroForm({
   return (
     <div className="mx-auto min-h-screen max-w-2xl px-4 py-6">
       <header className="mb-6 border-b border-zinc-200 pb-4">
-        <Link href="/" className="text-sm underline">
-          ← Volver
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold">Registrar centro de acopio</h1>
+        <h1 className="text-2xl font-bold">Registrar centro de acopio</h1>
         <p className="mt-2 text-sm text-zinc-600">
           Completa los datos del centro y del responsable. Recibirás un código
           secreto para administrarlo.

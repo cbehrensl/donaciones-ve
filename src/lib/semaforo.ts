@@ -22,23 +22,23 @@ export function calcularSemafaro(necesidades: Necesidad[] = []): SemafaroEstado 
 
 export const SEMAFORO_LABELS: Record<SemafaroEstado, string> = {
   URGENTE: "Urgente",
-  MEDIA: "Atención media",
-  SATURADO: "Saturado",
+  MEDIA: "Información",
+  SATURADO: "Saturación",
   SIN_DATOS: "Sin reporte",
 };
 
 export const SEMAFORO_STYLES: Record<SemafaroEstado, string> = {
-  URGENTE: "border-red-600 bg-red-50 text-red-900",
-  MEDIA: "border-amber-500 bg-amber-50 text-amber-900",
-  SATURADO: "border-green-600 bg-green-50 text-green-900",
-  SIN_DATOS: "border-zinc-400 bg-zinc-50 text-zinc-700",
+  URGENTE: "border-red-500 bg-red-50 text-red-900",
+  MEDIA: "border-blue-300 bg-blue-50 text-blue-900",
+  SATURADO: "border-amber-400 bg-amber-50 text-amber-900",
+  SIN_DATOS: "border-zinc-200 bg-zinc-50 text-zinc-700",
 };
 
 export const SEMAFORO_DOT: Record<SemafaroEstado, string> = {
   URGENTE: "bg-red-600",
-  MEDIA: "bg-amber-500",
-  SATURADO: "bg-green-600",
-  SIN_DATOS: "bg-zinc-400",
+  MEDIA: "bg-blue-600",
+  SATURADO: "bg-amber-500",
+  SIN_DATOS: "bg-zinc-300",
 };
 
 export const URGENCIA_STYLES: Record<Urgencia, string> = {

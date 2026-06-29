@@ -3,6 +3,7 @@ import {
   isSupabaseConfigured,
   isSupabaseServiceConfigured,
 } from "@/lib/supabase";
+import { OwnerNav } from "@/components/navigation/OwnerNav";
 import { NuevoCentroForm } from "./NuevoCentroForm";
 
 export default async function NuevoCentroPage() {
@@ -13,11 +14,16 @@ export default async function NuevoCentroPage() {
     : [[], []];
 
   return (
-    <NuevoCentroForm
-      estados={estados}
-      municipios={municipios}
-      supabaseConfigured={configured}
-      supabaseServiceConfigured={serviceConfigured}
-    />
+    <>
+      <div className="mx-auto max-w-2xl px-4 pt-6">
+        <OwnerNav />
+      </div>
+      <NuevoCentroForm
+        estados={estados}
+        municipios={municipios}
+        supabaseConfigured={configured}
+        supabaseServiceConfigured={serviceConfigured}
+      />
+    </>
   );
 }
