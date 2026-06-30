@@ -96,6 +96,7 @@ export async function saveDonationLink(formData: FormData) {
   const description = formData.get("description") as string;
   const url = formData.get("url") as string;
   const image_url = formData.get("image_url") as string | null;
+  const country = (formData.get("country") as string | null)?.toUpperCase() || null;
   const is_active = formData.get("is_active") === "on";
 
   const payload = {
@@ -103,7 +104,8 @@ export async function saveDonationLink(formData: FormData) {
     description,
     url,
     image_url: image_url ? image_url : null,
-    is_active
+    country,
+    is_active,
   };
 
   if (id) {

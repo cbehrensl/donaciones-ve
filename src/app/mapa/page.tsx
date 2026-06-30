@@ -1,7 +1,8 @@
-import { getCentrosAcopio } from '@/lib/data'
-import { extractCoordenadas } from '@/lib/coordenadas'
+import { getCentrosAcopio, getRefugios } from '@/lib/data'
+import { extractCoordenadas, COUNTRY_CENTROIDS } from '@/lib/coordenadas'
+import { getActiveDonationLinks } from '@/app/admin/donations/actions'
 import MapaClient from './MapaClient'
-import type { CentroConCoordenadas } from '@/lib/types'
+import type { CentroConCoordenadas, DonationConCoordenadas, RefugioConCoordenadas } from '@/lib/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -37,7 +38,11 @@ async function resolveUrl(url: string): Promise<string> {
 }
 
 export default async function MapaPage() {
-  const centros = await getCentrosAcopio()
+  const [centros, donationLinks, refugios] = await Promise.all([
+    getCentrosAcopio(),
+    getActiveDonationLinks(),
+    getRefugios(),
+  ])
 
   const centrosConCoordenadas: CentroConCoordenadas[] = (
     await Promise.all(
@@ -53,9 +58,46 @@ export default async function MapaPage() {
     )
   ).filter((c): c is CentroConCoordenadas => c !== null)
 
+  // Track how many donations land on each country centroid so we can offset
+  const countryCount: Record<string, number> = {}
+  const donacionesConCoordenadas: DonationConCoordenadas[] = donationLinks
+    .filter((d) => d.country && COUNTRY_CENTROIDS[d.country.toUpperCase()])
+    .map((d) => {
+      const code = d.country!.toUpperCase()
+      const base = COUNTRY_CENTROIDS[code]
+      const idx = countryCount[code] ?? 0
+      countryCount[code] = idx + 1
+      // Spiral offset: each additional pin shifts slightly so they don't stack
+      const angle = (idx * 137.5 * Math.PI) / 180
+      const radius = idx === 0 ? 0 : 0.6 + idx * 0.3
+      return {
+        ...d,
+        lat: base.lat + radius * Math.sin(angle),
+        lng: base.lng + radius * Math.cos(angle),
+      }
+    })
+
+  const refugiosConCoordenadas: RefugioConCoordenadas[] = (
+    await Promise.all(
+      refugios.map(async (r) => {
+        let url = r.google_maps_url
+        if (isShortUrl(url)) {
+          url = await resolveUrl(url!)
+        }
+        const coords = extractCoordenadas(url)
+        if (!coords) return null
+        return { ...r, lat: coords.lat, lng: coords.lng }
+      })
+    )
+  ).filter((r): r is RefugioConCoordenadas => r !== null)
+
   return (
     <main>
-      <MapaClient centros={centrosConCoordenadas} />
+      <MapaClient
+        centros={centrosConCoordenadas}
+        donaciones={donacionesConCoordenadas}
+        refugios={refugiosConCoordenadas}
+      />
     </main>
   )
 }

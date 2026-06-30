@@ -140,13 +140,44 @@ export interface CentroConCoordenadas extends CentroAcopio {
   lng: number;
 }
 
+export interface DonationConCoordenadas extends DonationLink {
+  lat: number;
+  lng: number;
+}
+
+export interface RefugioConCoordenadas extends Refugio {
+  lat: number;
+  lng: number;
+}
+
 export interface DonationLink {
   id: string;
   title: string;
   description: string;
   url: string;
   image_url: string | null;
+  country: string | null;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Refugio {
+  id: string;
+  nombre: string;
+  direccion: string | null;
+  referencia_lugar: string | null;
+  zona: string | null;
+  municipio: string | null;
+  estado_id: number | null;
+  contacto_nombre: string | null;
+  contacto_telefono: string | null;
+  num_personas: number | null;
+  necesidades: string | null;
+  confirmado: boolean;
+  tiene_maps_link: boolean;
+  google_maps_url: string | null;
+  activo: boolean;
   created_at: string;
   updated_at: string;
 }

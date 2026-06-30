@@ -19,7 +19,7 @@ export function HomeClient({
     {
       targetId: "tour-hub-nav",
       title: "Elige qué necesitas",
-      body: "Toca una opción: centros de acopio, donar dinero, teléfonos útiles o administrar un centro.",
+      body: "Toca una opción: centros de acopio, mapa interactivo, donar dinero, teléfonos útiles o administrar un centro.",
     },
     {
       targetId: "tour-emergency-contacts",
@@ -109,7 +109,65 @@ export function HomeClient({
           </div>
         </Link>
 
-        {/* 2. Donar dinero */}
+        {/* 2. Mapa de centros */}
+        <Link
+          href="/mapa"
+          className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-2xl">
+            🗺️
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-black text-zinc-900">
+              Mapa interactivo
+            </h2>
+            <p className="mt-1 text-sm leading-snug text-zinc-600">
+              Ve todos los centros y puntos de donación en un mapa interactivo.
+            </p>
+          </div>
+          <div className="shrink-0 text-zinc-300 transition group-hover:translate-x-1 group-hover:text-teal-500">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+
+        {/* 3. Refugios */}
+        <Link
+          href="/refugios"
+          className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-2xl">
+            🏠
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-black text-zinc-900">
+              Refugios
+            </h2>
+            <p className="mt-1 text-sm leading-snug text-zinc-600">
+              Lugares habilitados como refugio y sus necesidades.
+            </p>
+          </div>
+          <div className="shrink-0 text-zinc-300 transition group-hover:translate-x-1 group-hover:text-purple-500">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+
+        {/* 4. Donar dinero */}
         <details
           id="tour-donations"
           className="group rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all open:ring-2 open:ring-amber-500/20"
@@ -141,7 +199,7 @@ export function HomeClient({
           </div>
         </details>
 
-        {/* 3. Teléfonos y desaparecidos */}
+        {/* 4. Teléfonos y desaparecidos */}
         <details
           id="tour-emergency-contacts"
           className="group rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all open:ring-2 open:ring-red-500/20"
@@ -258,7 +316,7 @@ export function HomeClient({
           </div>
         </details>
 
-        {/* 4. Tengo un centro */}
+        {/* 5. Tengo un centro */}
         <Link
           href="/responsables"
           className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
@@ -292,6 +350,12 @@ export function HomeClient({
         <p>
           La información la envían personas y centros de la comunidad. Confirma
           los datos antes de ir o donar.
+        </p>
+        <p className="mt-3">
+          <Link href="/desarrolladores" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+            🔌 API pública para desarrolladores
+          </Link>
+          {" "}— integra estos datos en tu sistema.
         </p>
       </footer>
       <SpotlightTour steps={tourSteps} />
