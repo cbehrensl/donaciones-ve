@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useEffect, useRef, useState } from 'react';
-import type { CentroConCoordenadas } from '@/lib/types';
+import type { CentroConCoordenadas, DonationConCoordenadas, RefugioConCoordenadas } from '@/lib/types';
 
 // Workaround para el bug de iconos Leaflet con webpack/Next.js
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -12,6 +12,8 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: '', iconUrl: '', shadowUrl: '' });
 
 interface MapaLeafletProps {
   centros: (CentroConCoordenadas & { distancia?: number })[];
+  donaciones: DonationConCoordenadas[];
+  refugios: RefugioConCoordenadas[];
   userLocation: { lat: number; lng: number } | null;
   activeId: string | null;
   onSelectCentro: (id: string) => void;
@@ -33,35 +35,67 @@ function getStatusLabel(estatus: string | undefined): string {
   }
 }
 
-function createPinIcon(color: string, active = false): L.DivIcon {
-  // SVG teardrop pin (20×28 viewport, tip at bottom center)
-  const svg = `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 0C4.5 0 0 4.5 0 10C0 17.5 10 28 10 28C10 28 20 17.5 20 10C20 4.5 15.5 0 10 0Z"
-          fill="${color}" stroke="white" stroke-width="1.5"/>
-    <circle cx="10" cy="9.5" r="4" fill="white" opacity="0.9"/>
-  </svg>`
+/**
+ * CSS bubble pin: circle + triangle pointer + emoji.
+ * Pure HTML/CSS — no SVG layering, renders at native device resolution.
+ */
+function makeBubblePin(color: string, emoji: string, active = false): string {
+  const ring = active
+    ? `box-shadow:0 0 0 3px ${color}55,0 3px 12px rgba(0,0,0,0.32);`
+    : `box-shadow:0 2px 10px rgba(0,0,0,0.28);`
+  // Two stacked triangles fake a white border on the pointer
+  const pointer = `
+    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+      width:0;height:0;
+      border-left:10px solid transparent;border-right:10px solid transparent;
+      border-top:12px solid white;"></div>
+    <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+      width:0;height:0;
+      border-left:8px solid transparent;border-right:8px solid transparent;
+      border-top:10px solid ${color};"></div>`
+  return `<div style="position:relative;width:44px;height:56px">
+    <div style="
+      width:44px;height:44px;
+      background:${color};
+      border:3px solid white;
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;line-height:1;
+      ${ring}
+    ">${emoji}</div>
+    ${pointer}
+  </div>`
+}
 
-  if (active) {
-    return L.divIcon({
-      className: '',
-      html: `<div style="position:relative;width:20px;height:28px">
-               <div class="marker-pulse" style="width:20px;height:20px;top:-2px;left:0;background:${color}"></div>
-               <div style="position:relative;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.45))">${svg}</div>
-             </div>`,
-      iconSize: [20, 28],
-      iconAnchor: [10, 28],
-      popupAnchor: [0, -30],
-    })
-  }
+const CENTRO_COLOR = '#1d4ed8'
+const DONATION_COLOR = '#16a34a'
+const REFUGIO_COLOR = '#7c3aed'
 
+function createCentroIcon(active = false): L.DivIcon {
   return L.divIcon({
     className: '',
-    html: `<div style="filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3))">${svg}</div>`,
-    iconSize: [20, 28],
-    iconAnchor: [10, 28],
-    popupAnchor: [0, -30],
+    html: makeBubblePin(CENTRO_COLOR, '📦', active),
+    iconSize: [44, 56],
+    iconAnchor: [22, 56],
+    popupAnchor: [0, -58],
   })
 }
+
+const donationIcon = L.divIcon({
+  className: '',
+  html: makeBubblePin(DONATION_COLOR, '💵'),
+  iconSize: [44, 56],
+  iconAnchor: [22, 56],
+  popupAnchor: [0, -58],
+})
+
+const refugioIcon = L.divIcon({
+  className: '',
+  html: makeBubblePin(REFUGIO_COLOR, '🏠'),
+  iconSize: [44, 56],
+  iconAnchor: [22, 56],
+  popupAnchor: [0, -58],
+})
 
 const userIcon = L.divIcon({
   className: '',
@@ -130,6 +164,8 @@ function MapController({ centros, userLocation, activeId, markerRefs }: MapContr
 
 export default function MapaLeaflet({
   centros,
+  donaciones,
+  refugios,
   userLocation,
   activeId,
   onSelectCentro,
@@ -164,6 +200,56 @@ export default function MapaLeaflet({
         markerRefs={markerRefs}
       />
 
+      {donaciones.map((don) => (
+        <Marker
+          key={don.id}
+          position={[don.lat, don.lng]}
+          icon={donationIcon}
+          zIndexOffset={500}
+        >
+          <Popup>
+            <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>💵</span>
+                <div>
+                  <strong style={{ fontSize: 14, lineHeight: 1.3, display: 'block' }}>
+                    {don.title}
+                  </strong>
+                  {don.country && (
+                    <span style={{ fontSize: 11, color: DONATION_COLOR, fontWeight: 700, textTransform: 'uppercase' }}>
+                      {don.country}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {don.description && (
+                <p style={{ margin: '0 0 10px', fontSize: 12, color: '#4b5563', lineHeight: 1.4 }}>
+                  {don.description}
+                </p>
+              )}
+              <a
+                href={don.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  background: DONATION_COLOR,
+                  color: '#fff',
+                  textAlign: 'center',
+                  padding: '7px 12px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                💵 Donar
+              </a>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+
       {centros.map((centro) => {
         const isActive = activeId === centro.id;
         const color = getMarkerColor(centro.estatus);
@@ -171,7 +257,7 @@ export default function MapaLeaflet({
           <Marker
             key={centro.id}
             position={[centro.lat, centro.lng]}
-            icon={createPinIcon(color, isActive)}
+            icon={createCentroIcon(isActive)}
             zIndexOffset={isActive ? 1000 : 0}
             ref={(marker) => {
               if (marker) markerRefs.current.set(centro.id, marker);
@@ -259,6 +345,86 @@ export default function MapaLeaflet({
           </Marker>
         );
       })}
+
+      {refugios.map((refugio) => (
+        <Marker
+          key={refugio.id}
+          position={[refugio.lat, refugio.lng]}
+          icon={refugioIcon}
+          zIndexOffset={300}
+        >
+          <Popup>
+            <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>🏠</span>
+                <div>
+                  <strong style={{ fontSize: 14, lineHeight: 1.3, display: 'block' }}>
+                    {refugio.nombre}
+                  </strong>
+                  {(refugio.zona || refugio.municipio) && (
+                    <span style={{ fontSize: 11, color: REFUGIO_COLOR, fontWeight: 700, textTransform: 'uppercase' }}>
+                      {refugio.zona ?? refugio.municipio}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {(refugio.direccion || refugio.referencia_lugar) && (
+                <p style={{ margin: '0 0 6px', fontSize: 12, color: '#4b5563', lineHeight: 1.4 }}>
+                  {refugio.direccion ?? refugio.referencia_lugar}
+                </p>
+              )}
+              {refugio.necesidades && (
+                <p style={{ margin: '0 0 6px', fontSize: 11, color: '#92400e', background: '#fef3c7', borderRadius: 6, padding: '4px 8px', lineHeight: 1.4 }}>
+                  <strong>Necesidades:</strong> {refugio.necesidades}
+                </p>
+              )}
+              {refugio.contacto_telefono && (
+                <a
+                  href={`tel:${refugio.contacto_telefono.replace(/[^\d+]/g, '')}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    marginBottom: 6,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: REFUGIO_COLOR,
+                    textDecoration: 'none',
+                  }}
+                >
+                  📞 {refugio.contacto_telefono}
+                </a>
+              )}
+              {refugio.num_personas != null && (
+                <p style={{ margin: '0 0 6px', fontSize: 11, color: '#6b7280' }}>
+                  {refugio.num_personas} personas
+                </p>
+              )}
+              {refugio.google_maps_url && (
+                <a
+                  href={refugio.google_maps_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    background: REFUGIO_COLOR,
+                    color: '#fff',
+                    textAlign: 'center',
+                    padding: '7px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    marginTop: 4,
+                  }}
+                >
+                  Cómo llegar →
+                </a>
+              )}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
 
       {userLocation && (
         <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>

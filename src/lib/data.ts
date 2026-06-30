@@ -12,6 +12,7 @@ import type {
   ContactoEmergencia,
   DataLoadError,
   CentroAcopioPrivado,
+  DonationLink,
   Estado,
   HomeSearchFilters,
   HomeSearchMeta,
@@ -20,6 +21,7 @@ import type {
   ModeracionResumen,
   Municipio,
   Necesidad,
+  Refugio,
   Urgencia,
 } from "@/lib/types";
 
@@ -308,7 +310,7 @@ export async function getMunicipios(estadoId?: string): Promise<Municipio[]> {
 }
 
 export async function getCentrosAcopio(
-  filters?: { municipioId?: string; estadoId?: string },
+  filters?: { municipioId?: string; estadoId?: string; q?: string },
 ): Promise<CentroAcopio[]> {
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
 
@@ -358,6 +360,13 @@ export async function getCentrosAcopio(
 
   if (filters?.estadoId) {
     query = query.eq("estado_id", filters.estadoId);
+  }
+
+  if (filters?.q) {
+    const term = sanitizeSearchTerm(filters.q);
+    if (term) {
+      query = query.or(`nombre.ilike.%${term}%,direccion.ilike.%${term}%`);
+    }
   }
 
   const { data, error } = await query;
@@ -1144,4 +1153,87 @@ export async function buscarCentrosPorNecesidadRapida(params: {
       return true;
     })
     .slice(0, limit);
+}
+
+export async function getRefugios(
+  filters?: { zona?: string; q?: string },
+): Promise<Refugio[]> {
+  const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
+  if (!supabase) return [];
+
+  let query = supabase
+    .from("refugios")
+    .select(
+      "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, created_at, updated_at",
+    )
+    .eq("activo", true)
+    .order("updated_at", { ascending: false });
+
+  if (filters?.zona) {
+    query = query.eq("zona", filters.zona);
+  }
+
+  if (filters?.q) {
+    const term = sanitizeSearchTerm(filters.q);
+    if (term) {
+      query = query.or(
+        `nombre.ilike.%${term}%,direccion.ilike.%${term}%,municipio.ilike.%${term}%,zona.ilike.%${term}%,necesidades.ilike.%${term}%`,
+      );
+    }
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error cargando refugios:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row): Refugio => ({
+    id: String(row.id),
+    nombre: String(row.nombre),
+    direccion: row.direccion ? String(row.direccion) : null,
+    referencia_lugar: row.referencia_lugar ? String(row.referencia_lugar) : null,
+    zona: row.zona ? String(row.zona) : null,
+    municipio: row.municipio ? String(row.municipio) : null,
+    estado_id: row.estado_id != null ? Number(row.estado_id) : null,
+    contacto_nombre: row.contacto_nombre ? String(row.contacto_nombre) : null,
+    contacto_telefono: row.contacto_telefono ? String(row.contacto_telefono) : null,
+    num_personas: row.num_personas != null ? Number(row.num_personas) : null,
+    necesidades: row.necesidades ? String(row.necesidades) : null,
+    confirmado: Boolean(row.confirmado),
+    tiene_maps_link: Boolean(row.tiene_maps_link),
+    google_maps_url: row.google_maps_url ? String(row.google_maps_url) : null,
+    activo: Boolean(row.activo),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  }));
+}
+
+export async function getDonationLinksActivas(): Promise<DonationLink[]> {
+  const supabase = createSupabaseClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("donation_links")
+    .select("id, title, description, url, image_url, country, is_active, created_at, updated_at")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error cargando donation links:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row): DonationLink => ({
+    id: String(row.id),
+    title: String(row.title),
+    description: String(row.description ?? ""),
+    url: String(row.url),
+    image_url: row.image_url ? String(row.image_url) : null,
+    country: row.country ? String(row.country) : null,
+    is_active: Boolean(row.is_active),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  }));
 }
