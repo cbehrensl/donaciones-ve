@@ -55,6 +55,66 @@ export const ACTION_MESSAGES: Record<string, ActionFeedbackMessage> = {
     tone: "success",
     text: "Los datos del centro se actualizaron correctamente.",
   },
+  "cocina-actualizada": {
+    tone: "success",
+    text: "Los datos de la cocina se guardaron correctamente.",
+  },
+  "necesidad-agregada": {
+    tone: "success",
+    text: "El ingrediente se agregó correctamente.",
+  },
+  "necesidad-actualizada": {
+    tone: "success",
+    text: "La urgencia del ingrediente se actualizó correctamente.",
+  },
+  "necesidad-eliminada": {
+    tone: "success",
+    text: "El ingrediente se quitó de la lista.",
+  },
+  "productor-actualizado": {
+    tone: "success",
+    text: "Los datos del productor se guardaron correctamente.",
+  },
+  "productor-verificado": {
+    tone: "success",
+    text: "El productor fue verificado y ya se muestra en el directorio.",
+  },
+  "productor-pendiente": {
+    tone: "success",
+    text: "El productor volvió al estado pendiente de verificación.",
+  },
+  "productor-oculto": {
+    tone: "success",
+    text: "El productor se ocultó de la vista pública.",
+  },
+  "productor-visible": {
+    tone: "success",
+    text: "El productor volvió a mostrarse en la plataforma.",
+  },
+  "acceso-productor": {
+    tone: "success",
+    text: "Acceso al panel del productor confirmado.",
+  },
+  "acceso-cocina": {
+    tone: "success",
+    text: "Acceso al panel de la cocina confirmado.",
+  },
+  "cocina-verificada": {
+    tone: "success",
+    text: "La cocina fue verificada y ya se muestra en el directorio.",
+  },
+  "cocina-pendiente": {
+    tone: "success",
+    text: "La cocina volvió al estado pendiente de verificación.",
+  },
+  "cocina-oculta": {
+    tone: "success",
+    text: "La cocina se ocultó de la vista pública.",
+  },
+  "cocina-visible": {
+    tone: "success",
+    text: "La cocina volvió a mostrarse en la plataforma.",
+  },
   "fechas-invalidas": {
     tone: "error",
     text: "La fecha fin no puede ser anterior a la fecha inicio.",

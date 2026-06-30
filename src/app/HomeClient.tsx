@@ -286,6 +286,64 @@ export function HomeClient({
             </svg>
           </div>
         </Link>
+
+        {/* 5. Tengo alimentos para donar */}
+        <Link
+          href="/alimentacion"
+          className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-2xl">
+            🌱
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-black text-zinc-900">
+              Tengo alimentos para donar
+            </h2>
+            <p className="mt-1 text-sm leading-snug text-zinc-600">
+              Registra qué puedes aportar y encuentra cocinas que lo necesitan.
+            </p>
+          </div>
+          <div className="shrink-0 text-zinc-300 transition group-hover:translate-x-1 group-hover:text-emerald-500">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+
+        {/* 6. Tengo o manejo una cocina */}
+        <Link
+          href="/alimentacion"
+          className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-2xl">
+            🍳
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-black text-zinc-900">
+              Tengo o manejo una cocina
+            </h2>
+            <p className="mt-1 text-sm leading-snug text-zinc-600">
+              Registra tu cocina, reporta necesidades y recibe coordinación.
+            </p>
+          </div>
+          <div className="shrink-0 text-zinc-300 transition group-hover:translate-x-1 group-hover:text-orange-500">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
       </div>
 
       <footer className="mt-8 border-t border-zinc-200 pt-6 text-center text-xs leading-relaxed text-zinc-500 sm:text-left">

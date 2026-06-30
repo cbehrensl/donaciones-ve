@@ -75,10 +75,10 @@ export default async function StaffHubPage({ searchParams }: StaffHubPageProps) 
         </p>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href={tokenHref("/moderacion", token)}
-          className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+          className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
         >
           <p className="text-base font-black text-zinc-900">Centros y alertas</p>
           <p className="mt-1 text-sm text-zinc-600">
@@ -86,8 +86,17 @@ export default async function StaffHubPage({ searchParams }: StaffHubPageProps) 
           </p>
         </Link>
         <Link
+          href={tokenHref("/staff/productores", token)}
+          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
+        >
+          <p className="text-base font-black text-zinc-900">Productores y cocinas</p>
+          <p className="mt-1 text-sm text-zinc-600">
+            Verificar productores y cocinas. Vista de cruce oferta/demanda.
+          </p>
+        </Link>
+        <Link
           href={tokenHref("/staff/donaciones", token)}
-          className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+          className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
         >
           <p className="text-base font-black text-zinc-900">Donaciones</p>
           <p className="mt-1 text-sm text-zinc-600">

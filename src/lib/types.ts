@@ -150,3 +150,72 @@ export interface DonationLink {
   created_at: string;
   updated_at: string;
 }
+
+export type CategoriaProductor =
+  | "proteinas"
+  | "vegetales"
+  | "no_perecederos"
+  | "lacteos"
+  | "granos"
+  | "frutas"
+  | "otros";
+
+export interface Productor {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  contacto: string | null;
+  ubicacion_url: string | null;
+  estado_id: string | null;
+  municipio_id: string;
+  categorias: CategoriaProductor[];
+  verificado: boolean;
+  activo: boolean;
+  updated_at: string;
+  municipios?: Municipio | null;
+}
+
+export interface ProductorPrivado extends Productor {
+  responsable_nombre: string;
+  responsable_telefono: string;
+}
+
+export interface NecesidadCocina {
+  id: string;
+  cocina_id: string;
+  categoria: string;
+  urgencia: Urgencia;
+  detalle: string | null;
+  updated_at: string;
+}
+
+export interface CocinaComuniaria {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  contacto: string | null;
+  direccion: string;
+  ubicacion_url: string | null;
+  estado_id: string | null;
+  municipio_id: string;
+  horario: string | null;
+  capacidad_beneficiarios: number | null;
+  verificado: boolean;
+  activo: boolean;
+  updated_at: string;
+  municipios?: Municipio | null;
+  necesidades_cocina?: NecesidadCocina[];
+}
+
+export interface CocinaComuniariaPrivada extends CocinaComuniaria {
+  responsable_nombre: string;
+  responsable_telefono: string;
+}
+
+export type CrearProductorResult =
+  | { ok: true; productorId: string; codigoGestion: string }
+  | { ok: false; message: string };
+
+export type CrearCocinaResult =
+  | { ok: true; cocinaId: string; codigoGestion: string }
+  | { ok: false; message: string };

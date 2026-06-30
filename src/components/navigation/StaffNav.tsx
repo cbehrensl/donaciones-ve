@@ -17,6 +17,7 @@ export function StaffNav({ token }: StaffNavProps) {
   const isHub = pathname === "/staff";
   const isModeracion = pathname === "/moderacion";
   const isDonaciones = pathname === "/staff/donaciones";
+  const isProductores = pathname === "/staff/productores";
 
   return (
     <div className="mb-6 flex items-center justify-between gap-4">
@@ -45,20 +46,20 @@ export function StaffNav({ token }: StaffNavProps) {
         )}
         {isModeracion && (
           <>
-            <span aria-hidden className="text-zinc-300">
-              ›
-            </span>
-            <span className="font-semibold text-zinc-900">
-              Centros y alertas
-            </span>
+            <span aria-hidden className="text-zinc-300">›</span>
+            <span className="font-semibold text-zinc-900">Centros y alertas</span>
           </>
         )}
         {isDonaciones && (
           <>
-            <span aria-hidden className="text-zinc-300">
-              ›
-            </span>
+            <span aria-hidden className="text-zinc-300">›</span>
             <span className="font-semibold text-zinc-900">Donaciones</span>
+          </>
+        )}
+        {isProductores && (
+          <>
+            <span aria-hidden className="text-zinc-300">›</span>
+            <span className="font-semibold text-zinc-900">Productores y cocinas</span>
           </>
         )}
       </nav>
@@ -70,6 +71,14 @@ export function StaffNav({ token }: StaffNavProps) {
             className="text-xs font-semibold text-zinc-500 transition hover:text-zinc-800"
           >
             Centros
+          </Link>
+        )}
+        {!isProductores && (
+          <Link
+            href={withToken("/staff/productores", token)}
+            className="text-xs font-semibold text-zinc-500 transition hover:text-zinc-800"
+          >
+            Productores
           </Link>
         )}
         {!isDonaciones && (
