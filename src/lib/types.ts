@@ -151,13 +151,17 @@ export interface RefugioConCoordenadas extends Refugio {
   lng: number;
 }
 
+export type DonationLinkCategory = "money" | "psychological";
+
 export interface DonationLink {
   id: string;
   title: string;
   description: string;
-  url: string;
+  url: string | null;
+  whatsapp_phone: string | null;
   image_url: string | null;
   country: string | null;
+  category: DonationLinkCategory;
   is_active: boolean;
   created_at: string;
   updated_at: string;

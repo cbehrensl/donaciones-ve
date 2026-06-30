@@ -71,7 +71,7 @@ export default async function StaffHubPage({ searchParams }: StaffHubPageProps) 
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
           Centraliza moderación de centros, alertas operativas y administración
-          de enlaces de donación.
+          de enlaces de ayuda.
         </p>
       </header>
 
@@ -89,9 +89,9 @@ export default async function StaffHubPage({ searchParams }: StaffHubPageProps) 
           href={tokenHref("/staff/donaciones", token)}
           className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
         >
-          <p className="text-base font-black text-zinc-900">Donaciones</p>
+          <p className="text-base font-black text-zinc-900">Links de ayuda</p>
           <p className="mt-1 text-sm text-zinc-600">
-            Activar, editar o pausar enlaces de ayuda económica.
+            Activar, editar o pausar enlaces de ayuda económica y psicológica.
           </p>
         </Link>
       </section>

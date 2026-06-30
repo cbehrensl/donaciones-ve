@@ -42,6 +42,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         contactosEmergencia={contactosEmergencia}
         errors={errors}
         donationsSlot={<DonationLinksGrid />}
+        psychologicalSupportSlot={
+          <DonationLinksGrid
+            category="psychological"
+            emptyMessage="No hay plataformas de ayuda psicológica verificadas por ahora."
+            ctaLabel="Ver apoyo"
+          />
+        }
       />
     </main>
   );

@@ -58,7 +58,7 @@ export function StaffNav({ token }: StaffNavProps) {
             <span aria-hidden className="text-zinc-300">
               ›
             </span>
-            <span className="font-semibold text-zinc-900">Donaciones</span>
+            <span className="font-semibold text-zinc-900">Links de ayuda</span>
           </>
         )}
       </nav>
@@ -77,7 +77,7 @@ export function StaffNav({ token }: StaffNavProps) {
             href={withToken("/staff/donaciones", token)}
             className="text-xs font-semibold text-zinc-500 transition hover:text-zinc-800"
           >
-            Donaciones
+            Links de ayuda
           </Link>
         )}
       </div>

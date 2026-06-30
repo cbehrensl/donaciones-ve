@@ -200,55 +200,63 @@ export default function MapaLeaflet({
         markerRefs={markerRefs}
       />
 
-      {donaciones.map((don) => (
-        <Marker
-          key={don.id}
-          position={[don.lat, don.lng]}
-          icon={donationIcon}
-          zIndexOffset={500}
-        >
-          <Popup>
-            <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 20, lineHeight: 1 }}>💵</span>
-                <div>
-                  <strong style={{ fontSize: 14, lineHeight: 1.3, display: 'block' }}>
-                    {don.title}
-                  </strong>
-                  {don.country && (
-                    <span style={{ fontSize: 11, color: DONATION_COLOR, fontWeight: 700, textTransform: 'uppercase' }}>
-                      {don.country}
-                    </span>
-                  )}
+      {donaciones.map((don) => {
+        const href =
+          don.url ??
+          (don.whatsapp_phone
+            ? `https://wa.me/${don.whatsapp_phone.replace(/[^\d]/g, "")}`
+            : "#")
+
+        return (
+          <Marker
+            key={don.id}
+            position={[don.lat, don.lng]}
+            icon={donationIcon}
+            zIndexOffset={500}
+          >
+            <Popup>
+              <div style={{ minWidth: 200, fontFamily: 'system-ui, sans-serif' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 20, lineHeight: 1 }}>💵</span>
+                  <div>
+                    <strong style={{ fontSize: 14, lineHeight: 1.3, display: 'block' }}>
+                      {don.title}
+                    </strong>
+                    {don.country && (
+                      <span style={{ fontSize: 11, color: DONATION_COLOR, fontWeight: 700, textTransform: 'uppercase' }}>
+                        {don.country}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                {don.description && (
+                  <p style={{ margin: '0 0 10px', fontSize: 12, color: '#4b5563', lineHeight: 1.4 }}>
+                    {don.description}
+                  </p>
+                )}
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    background: DONATION_COLOR,
+                    color: '#fff',
+                    textAlign: 'center',
+                    padding: '7px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  💵 Donar
+                </a>
               </div>
-              {don.description && (
-                <p style={{ margin: '0 0 10px', fontSize: 12, color: '#4b5563', lineHeight: 1.4 }}>
-                  {don.description}
-                </p>
-              )}
-              <a
-                href={don.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  background: DONATION_COLOR,
-                  color: '#fff',
-                  textAlign: 'center',
-                  padding: '7px 12px',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                }}
-              >
-                💵 Donar
-              </a>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+            </Popup>
+          </Marker>
+        )
+      })}
 
       {centros.map((centro) => {
         const isActive = activeId === centro.id;

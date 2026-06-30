@@ -1,7 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { DonationLink } from "@/lib/types";
+import type { DonationLink, DonationLinkCategory } from "@/lib/types";
+
+const LINK_CATEGORIES: {
+  value: DonationLinkCategory;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "money",
+    label: "Donación de dinero",
+    description: "Organizaciones donde aportar ayuda económica.",
+  },
+  {
+    value: "psychological",
+    label: "Ayuda psicológica",
+    description: "Plataformas que ofrecen apoyo emocional o psicológico.",
+  },
+];
+
+const CATEGORY_LABELS: Record<DonationLinkCategory, string> = {
+  money: "Dinero",
+  psychological: "Ayuda psicológica",
+};
 
 const COUNTRIES: { code: string; name: string }[] = [
   { code: "AF", name: "Afghanistan" },
@@ -229,6 +251,8 @@ export function AdminDonationsClient({
     setAdminData({
       total: updated.length,
       active: updated.filter((link) => link.is_active).length,
+      money: updated.filter((link) => link.category === "money").length,
+      psychological: updated.filter((link) => link.category === "psychological").length,
     });
   }
 
@@ -277,7 +301,7 @@ export function AdminDonationsClient({
 
   return (
     <div>
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 grid gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <p className="text-xs font-black uppercase tracking-wide text-zinc-500">Total</p>
           <p className="text-2xl font-black text-zinc-900">{adminData.total}</p>
@@ -286,12 +310,20 @@ export function AdminDonationsClient({
           <p className="text-xs font-black uppercase tracking-wide text-emerald-700">Activos</p>
           <p className="text-2xl font-black text-emerald-900">{adminData.active}</p>
         </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-xs font-black uppercase tracking-wide text-amber-700">Dinero</p>
+          <p className="text-2xl font-black text-amber-900">{adminData.money}</p>
+        </div>
+        <div className="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3">
+          <p className="text-xs font-black uppercase tracking-wide text-purple-700">Psicológica</p>
+          <p className="text-2xl font-black text-purple-900">{adminData.psychological}</p>
+        </div>
       </div>
 
       <div className="mb-6">
         <button 
           onClick={() => {
-            setCurrentLink({ is_active: true });
+            setCurrentLink({ is_active: true, category: "money" });
             setIsEditing(true);
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
@@ -305,8 +337,9 @@ export function AdminDonationsClient({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
@@ -318,12 +351,36 @@ export function AdminDonationsClient({
                   <div className="text-sm font-medium text-gray-900">{link.title}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                      link.category === "psychological"
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {CATEGORY_LABELS[link.category]}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm font-mono font-bold text-gray-700">{link.country ?? "—"}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <a href={link.url} target="_blank" rel="noreferrer" className="text-sm text-blue-700 truncate max-w-xs block transition hover:text-blue-900">
-                    {link.url}
-                  </a>
+                  {link.url ? (
+                    <a href={link.url} target="_blank" rel="noreferrer" className="text-sm text-blue-700 truncate max-w-xs block transition hover:text-blue-900">
+                      {link.url}
+                    </a>
+                  ) : link.whatsapp_phone ? (
+                    <a
+                      href={`https://wa.me/${link.whatsapp_phone.replace(/[^\d]/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-bold text-emerald-700 transition hover:text-emerald-900"
+                    >
+                      WhatsApp {link.whatsapp_phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-400">Sin contacto</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button 
@@ -341,7 +398,7 @@ export function AdminDonationsClient({
             ))}
             {links.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                   No hay links registrados.
                 </td>
               </tr>
@@ -357,6 +414,29 @@ export function AdminDonationsClient({
             <form onSubmit={handleSubmit} className="space-y-4">
               {currentLink.id && <input type="hidden" name="id" value={currentLink.id} />}
               <input type="hidden" name="token" value={token} />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                <select
+                  name="category"
+                  required
+                  defaultValue={currentLink.category ?? "money"}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                >
+                  {LINK_CATEGORIES.map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {
+                    LINK_CATEGORIES.find(
+                      (category) => category.value === (currentLink.category ?? "money"),
+                    )?.description
+                  }
+                </p>
+              </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">Título</label>
@@ -370,7 +450,24 @@ export function AdminDonationsClient({
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">URL</label>
-                <input type="url" name="url" required defaultValue={currentLink.url || ""} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="https://..." />
+                <input type="url" name="url" defaultValue={currentLink.url || ""} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="https://..." />
+                <p className="mt-1 text-xs text-gray-500">
+                  Opcional si agregas un número de WhatsApp.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">WhatsApp</label>
+                <input
+                  type="tel"
+                  name="whatsapp_phone"
+                  defaultValue={currentLink.whatsapp_phone || ""}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                  placeholder="+584121234567"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Agrega URL o WhatsApp. Si no hay URL, la tarjeta pública abrirá WhatsApp.
+                </p>
               </div>
               
               <div>

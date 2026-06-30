@@ -1216,8 +1216,9 @@ export async function getDonationLinksActivas(): Promise<DonationLink[]> {
 
   const { data, error } = await supabase
     .from("donation_links")
-    .select("id, title, description, url, image_url, country, is_active, created_at, updated_at")
+    .select("id, title, description, url, whatsapp_phone, image_url, country, category, is_active, created_at, updated_at")
     .eq("is_active", true)
+    .eq("category", "money")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -1229,9 +1230,11 @@ export async function getDonationLinksActivas(): Promise<DonationLink[]> {
     id: String(row.id),
     title: String(row.title),
     description: String(row.description ?? ""),
-    url: String(row.url),
+    url: row.url ? String(row.url) : null,
+    whatsapp_phone: row.whatsapp_phone ? String(row.whatsapp_phone) : null,
     image_url: row.image_url ? String(row.image_url) : null,
     country: row.country ? String(row.country) : null,
+    category: row.category === "psychological" ? "psychological" : "money",
     is_active: Boolean(row.is_active),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),

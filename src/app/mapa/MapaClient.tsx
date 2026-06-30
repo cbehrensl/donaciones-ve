@@ -152,10 +152,17 @@ export default function MapaClient({ centros, donaciones, refugios }: MapaClient
     )
   })
 
-  const donacionItems = donacionesVisibles.map((don) => (
+  const donacionItems = donacionesVisibles.map((don) => {
+    const href =
+      don.url ??
+      (don.whatsapp_phone
+        ? `https://wa.me/${don.whatsapp_phone.replace(/[^\d]/g, "")}`
+        : "#");
+
+    return (
     <li key={don.id}>
       <a
-        href={don.url}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2.5 px-4 py-3 border-b border-zinc-100 hover:bg-amber-50 active:bg-amber-100 transition-colors"
@@ -174,7 +181,8 @@ export default function MapaClient({ centros, donaciones, refugios }: MapaClient
         </span>
       </a>
     </li>
-  ))
+    )
+  })
 
   const refugioItems = refugiosVisibles.map((refugio) => (
     <li key={refugio.id}>

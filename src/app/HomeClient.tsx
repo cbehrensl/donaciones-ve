@@ -8,12 +8,14 @@ interface HomeClientProps {
   contactosEmergencia: ContactoEmergencia[];
   errors: DataLoadError[];
   donationsSlot?: React.ReactNode;
+  psychologicalSupportSlot?: React.ReactNode;
 }
 
 export function HomeClient({
   contactosEmergencia,
   errors,
   donationsSlot,
+  psychologicalSupportSlot,
 }: HomeClientProps) {
   const tourSteps = [
     {
@@ -30,6 +32,11 @@ export function HomeClient({
       targetId: "tour-donations",
       title: "Donar dinero",
       body: "Aquí verás organizaciones verificadas. Toca para ver dónde aportar.",
+    },
+    {
+      targetId: "tour-psychological-support",
+      title: "Ayuda psicológica",
+      body: "Aquí verás plataformas verificadas que están ofreciendo apoyo emocional y psicológico.",
     },
   ];
 
@@ -199,7 +206,39 @@ export function HomeClient({
           </div>
         </details>
 
-        {/* 4. Teléfonos y desaparecidos */}
+        {/* 5. Ayuda psicológica */}
+        <details
+          id="tour-psychological-support"
+          className="group rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all open:ring-2 open:ring-purple-500/20"
+        >
+          <summary className="flex cursor-pointer list-none items-center gap-4 rounded-2xl p-4 hover:bg-zinc-50">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-2xl">
+              🧠
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-black text-zinc-900">Ayuda psicológica</h2>
+              <p className="mt-1 text-sm leading-snug text-zinc-600">
+                Plataformas verificadas que ofrecen apoyo emocional y psicológico.
+              </p>
+            </div>
+            <div className="shrink-0 text-zinc-300 transition group-open:rotate-180 group-hover:text-purple-500">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </summary>
+          <div className="rounded-b-2xl border-t border-zinc-100 bg-zinc-50/50 p-4 sm:p-5">
+            {psychologicalSupportSlot}
+          </div>
+        </details>
+
+        {/* 6. Teléfonos y desaparecidos */}
         <details
           id="tour-emergency-contacts"
           className="group rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all open:ring-2 open:ring-red-500/20"
@@ -316,7 +355,7 @@ export function HomeClient({
           </div>
         </details>
 
-        {/* 5. Tengo un centro */}
+        {/* 7. Tengo un centro */}
         <Link
           href="/responsables"
           className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-md"

@@ -37,10 +37,10 @@ export default async function StaffDonacionesPage({
 
       <header className="mb-6">
         <h1 className="text-3xl font-black tracking-tight text-zinc-900">
-          Donaciones verificadas
+          Links de ayuda verificados
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Administra los enlaces públicos de ayuda económica.
+          Administra los enlaces públicos de ayuda económica y psicológica.
         </p>
       </header>
 
