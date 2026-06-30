@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const BASE_URL = "https://apoyovenezuela.com";
+const BASE_URL = "https://apoyo-venezuela.com";
 
 type Lang = "curl" | "js" | "python";
 
