@@ -26,9 +26,9 @@ export function CentroGrupoEstado({
     <details
       open={isOpen}
       onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
-      className="group rounded-2xl border border-zinc-200 bg-white shadow-sm"
+      className="group rounded-2xl border border-zinc-200 bg-white shadow-sm open:border-blue-200 open:bg-blue-50/30 open:shadow-md"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 group-open:border-b group-open:border-blue-100 group-open:bg-white/80">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden
@@ -56,7 +56,7 @@ export function CentroGrupoEstado({
           </svg>
         </div>
       </summary>
-      <div className="space-y-4 border-t border-zinc-100 p-4 sm:p-5">
+      <div className="space-y-4 border-t border-blue-100 bg-white p-4 sm:p-5">
         {centros.map((centro) => (
           <CentroCard
             key={centro.id}

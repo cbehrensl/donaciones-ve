@@ -1,5 +1,6 @@
 import { hashManagementCode } from "@/lib/gestion-code";
 import { filtrarAlertasActivas } from "@/lib/alertas";
+import { isMissingRefugiosColumnError } from "@/lib/refugios-db-compat";
 import {
   createSupabaseClient,
   createSupabaseServiceClient,
@@ -19,6 +20,8 @@ import type {
   ModeracionSearchFilters,
   ModeracionSearchMeta,
   ModeracionResumen,
+  RefugiosModeracionResumen,
+  RefugiosModeracionSearchFilters,
   Municipio,
   Necesidad,
   Refugio,
@@ -106,6 +109,9 @@ function normalizeAlertaCentro(raw: Record<string, unknown>): AlertaCentro {
       ? {
           id: String(centro.id),
           nombre: String(centro.nombre),
+          direccion: centro.direccion ? String(centro.direccion) : null,
+          contacto: centro.telefono_contacto ? String(centro.telefono_contacto) : null,
+          ubicacion_url: centro.ubicacion_url ? String(centro.ubicacion_url) : null,
           estado_id: centro.estado_id ? String(centro.estado_id) : null,
           municipio_id: String(centro.municipio_id),
           municipios: municipio
@@ -408,7 +414,7 @@ export async function getHomeDataWithFilters(
 }> {
   const errors: DataLoadError[] = [];
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
-  const limit = 50;
+  const limit = 100;
   const searchTerm = sanitizeSearchTerm(filters.q);
 
   if (!supabase) {
@@ -519,6 +525,9 @@ export async function getHomeDataWithFilters(
           centros_acopio (
             id,
             nombre,
+            direccion,
+            telefono_contacto,
+            ubicacion_url,
             estado_id,
             municipio_id,
             municipios ( id, nombre, estado_id )
@@ -666,6 +675,9 @@ export async function getAlertasRecientes(
       centros_acopio (
         id,
         nombre,
+        direccion,
+        telefono_contacto,
+        ubicacion_url,
         estado_id,
         municipio_id,
         municipios ( id, nombre, estado_id )
@@ -839,6 +851,228 @@ export async function getResumenModeracion(): Promise<ModeracionResumen> {
   };
 }
 
+function mapRowToRefugio(
+  row: Record<string, unknown>,
+  includeSaturado: boolean,
+  includeResponsable: boolean,
+): Refugio {
+  return {
+    id: String(row.id),
+    nombre: String(row.nombre),
+    direccion: row.direccion ? String(row.direccion) : null,
+    referencia_lugar: row.referencia_lugar ? String(row.referencia_lugar) : null,
+    zona: row.zona ? String(row.zona) : null,
+    municipio: row.municipio ? String(row.municipio) : null,
+    estado_id: row.estado_id != null ? Number(row.estado_id) : null,
+    contacto_nombre: row.contacto_nombre ? String(row.contacto_nombre) : null,
+    contacto_telefono: row.contacto_telefono ? String(row.contacto_telefono) : null,
+    num_personas: row.num_personas != null ? Number(row.num_personas) : null,
+    necesidades: row.necesidades ? String(row.necesidades) : null,
+    confirmado: Boolean(row.confirmado),
+    tiene_maps_link: Boolean(row.tiene_maps_link),
+    google_maps_url: row.google_maps_url ? String(row.google_maps_url) : null,
+    activo: Boolean(row.activo),
+    saturado: includeSaturado ? Boolean(row.saturado) : false,
+    codigo_gestion_hash: null,
+    responsable_nombre:
+      includeResponsable && row.responsable_nombre
+        ? String(row.responsable_nombre)
+        : null,
+    responsable_telefono:
+      includeResponsable && row.responsable_telefono
+        ? String(row.responsable_telefono)
+        : null,
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
+const REFUGIOS_MODERACION_SELECT_FULL =
+  "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, saturado, responsable_nombre, responsable_telefono, created_at, updated_at";
+
+const REFUGIOS_MODERACION_SELECT_LEGACY =
+  "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, created_at, updated_at";
+
+function applyRefugiosModeracionFilters<
+  T extends {
+    eq: (column: string, value: unknown) => T;
+    or: (filters: string) => T;
+  },
+>(
+  query: T,
+  filters: RefugiosModeracionSearchFilters,
+  searchTerm: string,
+  options?: { includeSaturado?: boolean; includeResponsable?: boolean },
+): T {
+  let next = query;
+  const includeSaturado = options?.includeSaturado ?? true;
+  const includeResponsable = options?.includeResponsable ?? true;
+
+  if (filters.actividad === "activos") {
+    next = next.eq("activo", true);
+  } else if (filters.actividad === "inactivos") {
+    next = next.eq("activo", false);
+  }
+
+  if (filters.confirmacion === "pendientes") {
+    next = next.eq("confirmado", false);
+  } else if (filters.confirmacion === "confirmados") {
+    next = next.eq("confirmado", true);
+  }
+
+  if (includeSaturado) {
+    if (filters.saturacion === "saturados") {
+      next = next.eq("saturado", true);
+    } else if (filters.saturacion === "normal") {
+      next = next.eq("saturado", false);
+    }
+  }
+
+  if (filters.estadoId) {
+    next = next.eq("estado_id", Number(filters.estadoId));
+  }
+
+  if (searchTerm) {
+    const searchFields = [
+      "nombre",
+      "direccion",
+      "municipio",
+      "zona",
+      "necesidades",
+      "contacto_nombre",
+      "contacto_telefono",
+    ];
+    if (includeResponsable) {
+      searchFields.push("responsable_nombre", "responsable_telefono");
+    }
+    next = next.or(
+      searchFields.map((field) => `${field}.ilike.%${searchTerm}%`).join(","),
+    );
+  }
+
+  return next;
+}
+
+export async function getRefugiosParaModeracion(
+  filters: RefugiosModeracionSearchFilters,
+): Promise<{ refugios: Refugio[]; meta: ModeracionSearchMeta }> {
+  const supabase = requireSupabaseServiceClient();
+  const searchTerm = sanitizeSearchTerm(filters.q);
+  const page = Math.max(0, filters.page);
+  const pageSize = Math.min(Math.max(20, filters.pageSize), 100);
+  const from = page * pageSize;
+  const to = from + pageSize;
+
+  let includeSaturado = true;
+  let includeResponsable = true;
+
+  let query = supabase
+    .from("refugios")
+    .select(REFUGIOS_MODERACION_SELECT_FULL)
+    .order("confirmado", { ascending: true })
+    .order("updated_at", { ascending: false })
+    .range(from, to);
+
+  query = applyRefugiosModeracionFilters(query, filters, searchTerm, {
+    includeSaturado,
+    includeResponsable,
+  });
+
+  let { data, error } = await query;
+  let rowsData: Record<string, unknown>[] | null = data as Record<string, unknown>[] | null;
+
+  if (error && isMissingRefugiosColumnError(error)) {
+    includeSaturado = false;
+    includeResponsable = false;
+
+    let legacyQuery = supabase
+      .from("refugios")
+      .select(REFUGIOS_MODERACION_SELECT_LEGACY)
+      .order("confirmado", { ascending: true })
+      .order("updated_at", { ascending: false })
+      .range(from, to);
+
+    legacyQuery = applyRefugiosModeracionFilters(
+      legacyQuery,
+      filters,
+      searchTerm,
+      { includeSaturado: false, includeResponsable: false },
+    );
+
+    const legacyResult = await legacyQuery;
+    rowsData = legacyResult.data as Record<string, unknown>[] | null;
+    error = legacyResult.error;
+  }
+
+  if (error) {
+    console.error("Error cargando refugios para moderación:", error.message);
+    return {
+      refugios: [],
+      meta: { page, pageSize, hasNextPage: false, hasPrevPage: page > 0 },
+    };
+  }
+
+  const rows = rowsData ?? [];
+  const hasNextPage = rows.length > pageSize;
+  let refugios = rows
+    .slice(0, pageSize)
+    .map((row) =>
+      mapRowToRefugio(
+        row as Record<string, unknown>,
+        includeSaturado,
+        includeResponsable,
+      ),
+    );
+
+  if (!includeSaturado && filters.saturacion === "saturados") {
+    refugios = [];
+  }
+
+  return {
+    refugios,
+    meta: { page, pageSize, hasNextPage, hasPrevPage: page > 0 },
+  };
+}
+
+export async function getResumenRefugiosModeracion(): Promise<RefugiosModeracionResumen> {
+  const supabase = requireSupabaseServiceClient();
+
+  let { data, error } = await supabase
+    .from("refugios")
+    .select("activo, confirmado, saturado");
+
+  if (error && isMissingRefugiosColumnError(error)) {
+    const legacy = await supabase
+      .from("refugios")
+      .select("activo, confirmado");
+    data = legacy.data?.map((row) => ({ ...row, saturado: false })) ?? null;
+    error = legacy.error;
+  }
+
+  if (error) {
+    console.error("Error cargando resumen de refugios:", error.message);
+    return {
+      total: 0,
+      activos: 0,
+      inactivos: 0,
+      pendientes: 0,
+      confirmados: 0,
+      saturados: 0,
+    };
+  }
+
+  const refugios = data ?? [];
+
+  return {
+    total: refugios.length,
+    activos: refugios.filter((refugio) => refugio.activo).length,
+    inactivos: refugios.filter((refugio) => !refugio.activo).length,
+    pendientes: refugios.filter((refugio) => !refugio.confirmado).length,
+    confirmados: refugios.filter((refugio) => refugio.confirmado).length,
+    saturados: refugios.filter((refugio) => Boolean(refugio.saturado)).length,
+  };
+}
+
 export async function getCentroById(centroId: string): Promise<CentroAcopio | null> {
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
 
@@ -943,6 +1177,65 @@ export async function getCentroByManagementCode(
   };
 }
 
+export async function getRefugioByManagementCode(
+  code: string,
+): Promise<{ refugio: Refugio; codigoHash: string } | null> {
+  const supabase = requireSupabaseServiceClient();
+  const codigoHash = hashManagementCode(code);
+
+  let { data, error } = await supabase
+    .from("refugios")
+    .select(
+      "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, saturado, codigo_gestion_hash, responsable_nombre, responsable_telefono, created_at, updated_at",
+    )
+    .eq("codigo_gestion_hash", codigoHash)
+    .maybeSingle();
+  let includeSaturado = true;
+
+  if (error && isMissingRefugiosColumnError(error)) {
+    includeSaturado = false;
+    const legacyResult = await supabase
+      .from("refugios")
+      .select(
+        "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, codigo_gestion_hash, created_at, updated_at",
+      )
+      .eq("codigo_gestion_hash", codigoHash)
+      .maybeSingle();
+    data = legacyResult.data;
+    error = legacyResult.error;
+  }
+
+  if (error || !data) {
+    return null;
+  }
+
+  const refugio: Refugio = {
+    id: String(data.id),
+    nombre: String(data.nombre),
+    direccion: data.direccion ? String(data.direccion) : null,
+    referencia_lugar: data.referencia_lugar ? String(data.referencia_lugar) : null,
+    zona: data.zona ? String(data.zona) : null,
+    municipio: data.municipio ? String(data.municipio) : null,
+    estado_id: data.estado_id != null ? Number(data.estado_id) : null,
+    contacto_nombre: data.contacto_nombre ? String(data.contacto_nombre) : null,
+    contacto_telefono: data.contacto_telefono ? String(data.contacto_telefono) : null,
+    num_personas: data.num_personas != null ? Number(data.num_personas) : null,
+    necesidades: data.necesidades ? String(data.necesidades) : null,
+    confirmado: Boolean(data.confirmado),
+    tiene_maps_link: Boolean(data.tiene_maps_link),
+    google_maps_url: data.google_maps_url ? String(data.google_maps_url) : null,
+    activo: Boolean(data.activo),
+    saturado: includeSaturado ? Boolean(data.saturado) : false,
+    codigo_gestion_hash: String(data.codigo_gestion_hash),
+    responsable_nombre: data.responsable_nombre ? String(data.responsable_nombre) : null,
+    responsable_telefono: data.responsable_telefono ? String(data.responsable_telefono) : null,
+    created_at: String(data.created_at),
+    updated_at: String(data.updated_at),
+  };
+
+  return { refugio, codigoHash };
+}
+
 export async function getCentroForManagement(
   centroId: string,
   code: string,
@@ -995,6 +1288,66 @@ export async function getCentroForManagement(
   }
 
   return normalizeCentroPrivado(data as Record<string, unknown>);
+}
+
+export async function getRefugioForManagement(
+  refugioId: string,
+  code: string,
+): Promise<Refugio | null> {
+  const supabase = requireSupabaseServiceClient();
+  const codigoHash = hashManagementCode(code);
+
+  let { data, error } = await supabase
+    .from("refugios")
+    .select(
+      "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, saturado, codigo_gestion_hash, responsable_nombre, responsable_telefono, created_at, updated_at",
+    )
+    .eq("id", refugioId)
+    .eq("codigo_gestion_hash", codigoHash)
+    .maybeSingle();
+  let includeSaturado = true;
+
+  if (error && isMissingRefugiosColumnError(error)) {
+    includeSaturado = false;
+    const legacyResult = await supabase
+      .from("refugios")
+      .select(
+        "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, codigo_gestion_hash, created_at, updated_at",
+      )
+      .eq("id", refugioId)
+      .eq("codigo_gestion_hash", codigoHash)
+      .maybeSingle();
+    data = legacyResult.data;
+    error = legacyResult.error;
+  }
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    id: String(data.id),
+    nombre: String(data.nombre),
+    direccion: data.direccion ? String(data.direccion) : null,
+    referencia_lugar: data.referencia_lugar ? String(data.referencia_lugar) : null,
+    zona: data.zona ? String(data.zona) : null,
+    municipio: data.municipio ? String(data.municipio) : null,
+    estado_id: data.estado_id != null ? Number(data.estado_id) : null,
+    contacto_nombre: data.contacto_nombre ? String(data.contacto_nombre) : null,
+    contacto_telefono: data.contacto_telefono ? String(data.contacto_telefono) : null,
+    num_personas: data.num_personas != null ? Number(data.num_personas) : null,
+    necesidades: data.necesidades ? String(data.necesidades) : null,
+    confirmado: Boolean(data.confirmado),
+    tiene_maps_link: Boolean(data.tiene_maps_link),
+    google_maps_url: data.google_maps_url ? String(data.google_maps_url) : null,
+    activo: Boolean(data.activo),
+    saturado: includeSaturado ? Boolean(data.saturado) : false,
+    codigo_gestion_hash: String(data.codigo_gestion_hash),
+    responsable_nombre: data.responsable_nombre ? String(data.responsable_nombre) : null,
+    responsable_telefono: data.responsable_telefono ? String(data.responsable_telefono) : null,
+    created_at: String(data.created_at),
+    updated_at: String(data.updated_at),
+  };
 }
 
 export function formatCentroPlainText(centro: CentroAcopio): string {
@@ -1160,36 +1513,12 @@ export async function getRefugios(
 ): Promise<Refugio[]> {
   const supabase = createSupabaseServiceClient() ?? createSupabaseClient();
   if (!supabase) return [];
+  const limit = 100;
 
-  let query = supabase
-    .from("refugios")
-    .select(
-      "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, created_at, updated_at",
-    )
-    .eq("activo", true)
-    .order("updated_at", { ascending: false });
-
-  if (filters?.zona) {
-    query = query.eq("zona", filters.zona);
-  }
-
-  if (filters?.q) {
-    const term = sanitizeSearchTerm(filters.q);
-    if (term) {
-      query = query.or(
-        `nombre.ilike.%${term}%,direccion.ilike.%${term}%,municipio.ilike.%${term}%,zona.ilike.%${term}%,necesidades.ilike.%${term}%`,
-      );
-    }
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Error cargando refugios:", error.message);
-    return [];
-  }
-
-  return (data ?? []).map((row): Refugio => ({
+  const mapRowToRefugio = (
+    row: Record<string, unknown>,
+    includeSaturado: boolean,
+  ): Refugio => ({
     id: String(row.id),
     nombre: String(row.nombre),
     direccion: row.direccion ? String(row.direccion) : null,
@@ -1205,9 +1534,99 @@ export async function getRefugios(
     tiene_maps_link: Boolean(row.tiene_maps_link),
     google_maps_url: row.google_maps_url ? String(row.google_maps_url) : null,
     activo: Boolean(row.activo),
+    saturado: includeSaturado ? Boolean(row.saturado) : false,
+    codigo_gestion_hash: null,
+    responsable_nombre: row.responsable_nombre ? String(row.responsable_nombre) : null,
+    responsable_telefono: row.responsable_telefono
+      ? String(row.responsable_telefono)
+      : null,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
-  }));
+  });
+
+  let query = supabase
+    .from("refugios")
+    .select(
+      "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, saturado, responsable_nombre, responsable_telefono, created_at, updated_at",
+    )
+    .eq("activo", true)
+    .limit(limit)
+    .order("updated_at", { ascending: false });
+
+  if (filters?.zona) {
+    query = query.eq("zona", filters.zona);
+  }
+
+  if (filters?.q) {
+    const term = sanitizeSearchTerm(filters.q);
+    if (term) {
+      query = query.or(
+        `nombre.ilike.%${term}%,direccion.ilike.%${term}%,municipio.ilike.%${term}%,zona.ilike.%${term}%,necesidades.ilike.%${term}%`,
+      );
+    }
+  }
+
+  let { data, error } = await query;
+  let includeSaturado = true;
+
+  if (error && isMissingRefugiosColumnError(error)) {
+    includeSaturado = false;
+    let legacyQuery = supabase
+      .from("refugios")
+      .select(
+        "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, created_at, updated_at",
+      )
+      .eq("activo", true)
+      .limit(limit)
+      .order("updated_at", { ascending: false });
+
+    if (filters?.zona) {
+      legacyQuery = legacyQuery.eq("zona", filters.zona);
+    }
+
+    if (filters?.q) {
+      const term = sanitizeSearchTerm(filters.q);
+      if (term) {
+        legacyQuery = legacyQuery.or(
+          `nombre.ilike.%${term}%,direccion.ilike.%${term}%,municipio.ilike.%${term}%,zona.ilike.%${term}%,necesidades.ilike.%${term}%`,
+        );
+      }
+    }
+
+    const legacyResult = await legacyQuery;
+    data = legacyResult.data;
+    error = legacyResult.error;
+  }
+
+  if (error) {
+    console.error("Error cargando refugios:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) =>
+    mapRowToRefugio(row as Record<string, unknown>, includeSaturado),
+  );
+}
+
+export function formatRefugioPlainText(refugio: Refugio): string {
+  return [
+    `REFUGIO: ${refugio.nombre}`,
+    `Zona: ${refugio.zona || "Sin zona"}`,
+    refugio.municipio ? `Municipio: ${refugio.municipio}` : null,
+    `Dirección: ${refugio.direccion || refugio.referencia_lugar || "Sin dirección específica"}`,
+    refugio.contacto_nombre ? `Contacto: ${refugio.contacto_nombre}` : null,
+    refugio.contacto_telefono ? `Teléfono/WhatsApp: ${refugio.contacto_telefono}` : null,
+    refugio.google_maps_url ? `Ubicación: ${refugio.google_maps_url}` : null,
+    refugio.num_personas != null ? `Personas alojadas: ${refugio.num_personas}` : null,
+    `Confirmado: ${refugio.confirmado ? "Sí" : "Pendiente"}`,
+    `Activo: ${refugio.activo ? "Sí" : "No"}`,
+    `Saturado: ${refugio.saturado ? "Sí" : "No"}`,
+    "NECESIDADES:",
+    refugio.necesidades ? `- ${refugio.necesidades}` : "- Sin necesidades específicas reportadas.",
+    `Actualizado: ${new Date(refugio.updated_at).toLocaleString("es-VE")}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function getDonationLinksActivas(): Promise<DonationLink[]> {

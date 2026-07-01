@@ -4,6 +4,58 @@ export const ALERTA_TIPOS_VISIBLES = [
   "NECESIDAD_URGENTE",
   "INSUMO_SATURADO",
 ] as const;
+export type AlertaTipoVisible = (typeof ALERTA_TIPOS_VISIBLES)[number];
+
+interface AlertaUIConfig {
+  label: string;
+  shortLabel: string;
+  icon: string;
+  badgeClasses: string;
+  itemClasses: string;
+}
+
+export const ALERTA_UI_CONFIG: Record<AlertaCentro["tipo"], AlertaUIConfig> = {
+  NECESIDAD_URGENTE: {
+    label: "Solicitud urgente",
+    shortLabel: "Necesita ayuda ahora",
+    icon: "🚨",
+    badgeClasses: "border-red-200 bg-red-50 text-red-900",
+    itemClasses: "border-red-200 bg-red-50 text-red-900",
+  },
+  INSUMO_SATURADO: {
+    label: "Alerta de saturación",
+    shortLabel: "No llevar por ahora",
+    icon: "✅",
+    badgeClasses: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    itemClasses: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  },
+  ACTUALIZACION_CENTRO: {
+    label: "Actualización de centro",
+    shortLabel: "Actualización",
+    icon: "ℹ️",
+    badgeClasses: "border-blue-200 bg-blue-50 text-blue-900",
+    itemClasses: "border-blue-200 bg-blue-50 text-blue-900",
+  },
+};
+
+export function splitVisibleAlertasByTipo(alertas: AlertaCentro[]): {
+  urgentes: AlertaCentro[];
+  saturadas: AlertaCentro[];
+} {
+  const urgentes: AlertaCentro[] = [];
+  const saturadas: AlertaCentro[] = [];
+
+  for (const alerta of alertas) {
+    if (alerta.tipo === "NECESIDAD_URGENTE") {
+      urgentes.push(alerta);
+    }
+    if (alerta.tipo === "INSUMO_SATURADO") {
+      saturadas.push(alerta);
+    }
+  }
+
+  return { urgentes, saturadas };
+}
 
 function normalizeExpiresAt(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) {
@@ -71,6 +123,52 @@ export function agruparAlertasActivasPorCentro(
     map.set(alerta.centro_id, list);
   }
   return map;
+}
+
+export interface AlertasAgrupadasCentro {
+  centroId: string;
+  centro: AlertaCentro["centros_acopio"] | null;
+  alertas: AlertaCentro[];
+  latestCreatedAt: string;
+}
+
+export function agruparAlertasPorCentro(
+  alertas: AlertaCentro[],
+): AlertasAgrupadasCentro[] {
+  const map = new Map<string, AlertasAgrupadasCentro>();
+
+  for (const alerta of alertas) {
+    const current = map.get(alerta.centro_id);
+    if (!current) {
+      map.set(alerta.centro_id, {
+        centroId: alerta.centro_id,
+        centro: alerta.centros_acopio ?? null,
+        alertas: [alerta],
+        latestCreatedAt: alerta.created_at,
+      });
+      continue;
+    }
+
+    current.alertas.push(alerta);
+    if (new Date(alerta.created_at).getTime() > new Date(current.latestCreatedAt).getTime()) {
+      current.latestCreatedAt = alerta.created_at;
+    }
+    if (!current.centro && alerta.centros_acopio) {
+      current.centro = alerta.centros_acopio;
+    }
+  }
+
+  return [...map.values()]
+    .map((entry) => ({
+      ...entry,
+      alertas: entry.alertas.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.latestCreatedAt).getTime() - new Date(a.latestCreatedAt).getTime(),
+    );
 }
 
 export function calcularSemaforoDesdeAlertas(

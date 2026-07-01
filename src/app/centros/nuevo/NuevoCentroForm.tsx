@@ -237,6 +237,10 @@ export function NuevoCentroForm({
               placeholder="Teléfono visible para donantes"
               className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
             />
+            <p className="mt-1 text-xs text-zinc-500">
+              Usa un número con WhatsApp para que los donantes puedan escribirte
+              directamente desde la ficha del centro.
+            </p>
           </div>
 
           <div>
@@ -251,50 +255,53 @@ export function NuevoCentroForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="fecha_inicio_recepcion"
-                className="mb-1.5 block text-sm font-bold"
-              >
-                Fecha inicio de recepción (opcional)
-              </label>
-              <input
-                id="fecha_inicio_recepcion"
-                name="fecha_inicio_recepcion"
-                type="date"
-                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-              />
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4 space-y-4">
+            <p className="text-sm font-bold text-zinc-800">Disponibilidad para recibir donaciones</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="fecha_inicio_recepcion"
+                  className="mb-1.5 block text-sm font-bold"
+                >
+                  Fecha inicio de recepción (opcional)
+                </label>
+                <input
+                  id="fecha_inicio_recepcion"
+                  name="fecha_inicio_recepcion"
+                  type="date"
+                  className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="fecha_fin_recepcion"
+                  className="mb-1.5 block text-sm font-bold"
+                >
+                  Fecha fin de recepción (opcional)
+                </label>
+                <input
+                  id="fecha_fin_recepcion"
+                  name="fecha_fin_recepcion"
+                  type="date"
+                  className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+                />
+              </div>
             </div>
-            <div>
-              <label
-                htmlFor="fecha_fin_recepcion"
-                className="mb-1.5 block text-sm font-bold"
-              >
-                Fecha fin de recepción (opcional)
-              </label>
-              <input
-                id="fecha_fin_recepcion"
-                name="fecha_fin_recepcion"
-                type="date"
-                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-              />
-            </div>
-          </div>
 
-          <div>
-            <label
-              htmlFor="horario_recepcion"
-              className="mb-1.5 block text-sm font-bold"
-            >
-              Horario de recepción (opcional)
-            </label>
-            <input
-              id="horario_recepcion"
-              name="horario_recepcion"
-              placeholder="Ej. Lun a Sáb de 8:00 a.m. a 5:00 p.m."
-              className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-            />
+            <div>
+              <label
+                htmlFor="horario_recepcion"
+                className="mb-1.5 block text-sm font-bold"
+              >
+                Horario de recepción (opcional)
+              </label>
+              <input
+                id="horario_recepcion"
+                name="horario_recepcion"
+                placeholder="Ej. Lun a Sáb de 8:00 a.m. a 5:00 p.m."
+                className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+              />
+            </div>
           </div>
         </fieldset>
 

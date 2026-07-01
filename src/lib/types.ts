@@ -79,6 +79,9 @@ export interface AlertaCentro {
   centros_acopio?: {
     id: string;
     nombre: string;
+    direccion?: string | null;
+    contacto?: string | null;
+    ubicacion_url?: string | null;
     estado_id: string | null;
     municipio_id: string;
     municipios?: { id: string; nombre: string; estado_id: string } | null;
@@ -136,6 +139,27 @@ export interface ModeracionSearchMeta {
   hasPrevPage: boolean;
 }
 
+export type ModeracionTab = "centros" | "refugios";
+
+export interface RefugiosModeracionSearchFilters {
+  q: string;
+  actividad: string;
+  confirmacion: string;
+  saturacion: string;
+  estadoId: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface RefugiosModeracionResumen {
+  total: number;
+  activos: number;
+  inactivos: number;
+  pendientes: number;
+  confirmados: number;
+  saturados: number;
+}
+
 export interface CentroConCoordenadas extends CentroAcopio {
   lat: number;
   lng: number;
@@ -183,6 +207,10 @@ export interface Refugio {
   tiene_maps_link: boolean;
   google_maps_url: string | null;
   activo: boolean;
+  saturado: boolean;
+  codigo_gestion_hash: string | null;
+  responsable_nombre: string | null;
+  responsable_telefono: string | null;
   created_at: string;
   updated_at: string;
 }

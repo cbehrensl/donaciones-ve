@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   actualizarDetallesCentro,
@@ -10,7 +9,7 @@ import { SnackbarForm } from "@/components/SnackbarForm";
 import { SnackbarShell } from "@/components/SnackbarShell";
 import { OwnerNav } from "@/components/navigation/OwnerNav";
 import { getCentroForManagement } from "@/lib/data";
-import { URGENCIA_STYLES } from "@/lib/semaforo";
+import { URGENCIA_LABELS, URGENCIA_STYLES } from "@/lib/semaforo";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { CentroAcopioPrivado, TipoInsumo } from "@/lib/types";
 
@@ -114,93 +113,102 @@ export default async function GestionCentroPage({
           <input type="hidden" name="centroId" value={centroId} />
           <input type="hidden" name="codigo" value={codigo} />
 
-          <div className="mb-4 space-y-4">
-            <div>
-              <label htmlFor="contacto" className="mb-1.5 block text-sm font-bold">
-                Contacto público
-              </label>
-              <input
-                id="contacto"
-                name="contacto"
-                defaultValue={centro.contacto ?? ""}
-                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label htmlFor="vialidad" className="mb-1.5 block text-sm font-bold">
-                Estado de vialidad
-              </label>
-              <input
-                id="vialidad"
-                name="vialidad"
-                defaultValue={centro.estado_vialidad ?? ""}
-                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="ubicacion_url"
-                className="mb-1.5 block text-sm font-bold"
-              >
-                Link de ubicación en Maps
-              </label>
-              <input
-                id="ubicacion_url"
-                name="ubicacion_url"
-                type="url"
-                inputMode="url"
-                defaultValue={centro.ubicacion_url ?? ""}
-                placeholder="https://maps.google.com/..."
-                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+          <div className="mb-4 space-y-6">
+            <div className="space-y-4 rounded-xl border border-zinc-100 bg-zinc-50/80 p-4">
+              <h3 className="text-sm font-bold text-zinc-900">Ubicación y contacto</h3>
               <div>
-                <label
-                  htmlFor="fecha_inicio_recepcion"
-                  className="mb-1.5 block text-sm font-bold"
-                >
-                  Fecha inicio de recepción
+                <label htmlFor="contacto" className="mb-1.5 block text-sm font-bold">
+                  Contacto público
                 </label>
                 <input
-                  id="fecha_inicio_recepcion"
-                  name="fecha_inicio_recepcion"
-                  type="date"
-                  defaultValue={centro.fecha_inicio_recepcion ?? ""}
-                  className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+                  id="contacto"
+                  name="contacto"
+                  defaultValue={centro.contacto ?? ""}
+                  placeholder="Teléfono con WhatsApp"
+                  className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+                />
+              </div>
+              <div>
+                <label htmlFor="vialidad" className="mb-1.5 block text-sm font-bold">
+                  Estado de vialidad
+                </label>
+                <input
+                  id="vialidad"
+                  name="vialidad"
+                  defaultValue={centro.estado_vialidad ?? ""}
+                  className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
                 />
               </div>
               <div>
                 <label
-                  htmlFor="fecha_fin_recepcion"
+                  htmlFor="ubicacion_url"
                   className="mb-1.5 block text-sm font-bold"
                 >
-                  Fecha fin de recepción
+                  Link de ubicación en Maps
                 </label>
                 <input
-                  id="fecha_fin_recepcion"
-                  name="fecha_fin_recepcion"
-                  type="date"
-                  defaultValue={centro.fecha_fin_recepcion ?? ""}
-                  className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
+                  id="ubicacion_url"
+                  name="ubicacion_url"
+                  type="url"
+                  inputMode="url"
+                  defaultValue={centro.ubicacion_url ?? ""}
+                  placeholder="https://maps.google.com/..."
+                  className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
                 />
               </div>
             </div>
-            <div>
-              <label
-                htmlFor="horario_recepcion"
-                className="mb-1.5 block text-sm font-bold"
-              >
-                Horario de recepción
-              </label>
-              <input
-                id="horario_recepcion"
-                name="horario_recepcion"
-                defaultValue={centro.horario_recepcion ?? ""}
-                placeholder="Ej. Lunes a sábado 8:00 a.m. a 5:00 p.m."
-                className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2.5 text-base"
-              />
+
+            <div className="space-y-4 rounded-xl border border-zinc-100 bg-zinc-50/80 p-4">
+              <h3 className="text-sm font-bold text-zinc-900">Disponibilidad</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="fecha_inicio_recepcion"
+                    className="mb-1.5 block text-sm font-bold"
+                  >
+                    Fecha inicio de recepción
+                  </label>
+                  <input
+                    id="fecha_inicio_recepcion"
+                    name="fecha_inicio_recepcion"
+                    type="date"
+                    defaultValue={centro.fecha_inicio_recepcion ?? ""}
+                    className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="fecha_fin_recepcion"
+                    className="mb-1.5 block text-sm font-bold"
+                  >
+                    Fecha fin de recepción
+                  </label>
+                  <input
+                    id="fecha_fin_recepcion"
+                    name="fecha_fin_recepcion"
+                    type="date"
+                    defaultValue={centro.fecha_fin_recepcion ?? ""}
+                    className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="horario_recepcion"
+                  className="mb-1.5 block text-sm font-bold"
+                >
+                  Horario de recepción
+                </label>
+                <input
+                  id="horario_recepcion"
+                  name="horario_recepcion"
+                  defaultValue={centro.horario_recepcion ?? ""}
+                  placeholder="Ej. Lunes a sábado 8:00 a.m. a 5:00 p.m."
+                  className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2.5 text-base"
+                />
+              </div>
             </div>
+
             <div className="rounded bg-zinc-50 p-3 text-sm text-zinc-600">
               <p>
                 <strong>Responsable:</strong> {centro.responsable_nombre}
@@ -223,6 +231,10 @@ export default async function GestionCentroPage({
 
       <section>
         <h2 className="mb-4 text-lg font-bold">Insumos y necesidades</h2>
+        <p className="mb-4 text-sm text-zinc-600">
+          Usa mensajes claros para que cualquier persona sepa qué llevar y qué no
+          hace falta por ahora.
+        </p>
 
         <div className="mb-6 space-y-3">
           {(centro.necesidades ?? []).length === 0 ? (
@@ -233,46 +245,22 @@ export default async function GestionCentroPage({
             (centro.necesidades ?? []).map((necesidad) => (
               <div
                 key={necesidad.id}
-                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4"
               >
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="font-bold">{necesidad.tipo_insumo}</span>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-bold ${URGENCIA_STYLES[necesidad.urgencia]}`}
-                  >
-                    {necesidad.urgencia}
-                  </span>
-                </div>
-                {necesidad.detalle ? (
-                  <p className="mb-3 text-sm text-zinc-600">{necesidad.detalle}</p>
-                ) : null}
-
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <SnackbarForm
-                    action={actualizarUrgenciaNecesidad}
-                    className="flex flex-1 gap-2"
-                  >
-                    <input type="hidden" name="centroId" value={centroId} />
-                    <input type="hidden" name="codigo" value={codigo} />
-                    <input type="hidden" name="necesidadId" value={necesidad.id} />
-                    <select
-                      name="urgencia"
-                      defaultValue={necesidad.urgencia}
-                      className="flex-1 rounded-lg border-2 border-zinc-300 px-2 py-2 text-sm font-semibold"
-                    >
-                      <option value="URGENTE">URGENTE</option>
-                      <option value="MEDIA">MEDIA</option>
-                      <option value="SATURADO">SATURADO</option>
-                    </select>
-                    <button
-                      type="submit"
-                      disabled={!isSupabaseConfigured()}
-                      className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50"
-                    >
-                      Actualizar
-                    </button>
-                  </SnackbarForm>
-
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-zinc-900">{necesidad.tipo_insumo}</span>
+                      <span
+                        className={`rounded px-2 py-0.5 text-[11px] font-bold ${URGENCIA_STYLES[necesidad.urgencia]}`}
+                      >
+                        {URGENCIA_LABELS[necesidad.urgencia]}
+                      </span>
+                    </div>
+                    {necesidad.detalle ? (
+                      <p className="mt-1 text-sm text-zinc-600">{necesidad.detalle}</p>
+                    ) : null}
+                  </div>
                   <SnackbarForm action={eliminarNecesidad}>
                     <input type="hidden" name="centroId" value={centroId} />
                     <input type="hidden" name="codigo" value={codigo} />
@@ -280,12 +268,37 @@ export default async function GestionCentroPage({
                     <button
                       type="submit"
                       disabled={!isSupabaseConfigured()}
-                      className="w-full rounded-lg border-2 border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700 disabled:opacity-50 sm:w-auto"
+                      className="text-xs font-semibold text-red-600 underline-offset-2 hover:underline disabled:opacity-50"
                     >
-                      Eliminar
+                      Quitar
                     </button>
                   </SnackbarForm>
                 </div>
+
+                <SnackbarForm
+                  action={actualizarUrgenciaNecesidad}
+                  className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <input type="hidden" name="centroId" value={centroId} />
+                  <input type="hidden" name="codigo" value={codigo} />
+                  <input type="hidden" name="necesidadId" value={necesidad.id} />
+                  <select
+                    name="urgencia"
+                    defaultValue={necesidad.urgencia}
+                    className="w-full flex-1 rounded-lg border-2 border-zinc-300 bg-white px-2 py-2 text-sm font-semibold sm:min-w-0"
+                  >
+                    <option value="URGENTE">Lo necesitamos con urgencia</option>
+                    <option value="MEDIA">Lo estamos recibiendo</option>
+                    <option value="SATURADO">Ya tenemos suficiente</option>
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={!isSupabaseConfigured()}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50 sm:w-auto"
+                  >
+                    Actualizar
+                  </button>
+                </SnackbarForm>
               </div>
             ))
           )}
@@ -318,16 +331,16 @@ export default async function GestionCentroPage({
             </div>
             <div className="w-full">
               <label className="mb-1 block text-xs font-bold uppercase text-zinc-600">
-                Urgencia
+                Estado de ese insumo
               </label>
               <select
                 name="urgencia"
                 defaultValue="MEDIA"
                 className="w-full rounded-lg border-2 border-zinc-300 bg-white px-3 py-2 text-base"
               >
-                <option value="URGENTE">Urgente</option>
-                <option value="MEDIA">Media</option>
-                <option value="SATURADO">Saturado</option>
+                <option value="URGENTE">Lo necesitamos con urgencia</option>
+                <option value="MEDIA">Lo estamos recibiendo</option>
+                <option value="SATURADO">Ya tenemos suficiente</option>
               </select>
             </div>
           </div>
@@ -337,7 +350,7 @@ export default async function GestionCentroPage({
             </label>
             <input
               name="detalle"
-              placeholder="Ej. Tallas, cantidades..."
+              placeholder="Ej. Presentación, cantidades o nota útil."
               className="w-full rounded-lg border-2 border-zinc-300 px-3 py-2 text-base"
             />
           </div>

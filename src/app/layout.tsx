@@ -3,9 +3,9 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Donaciones Venezuela",
+  title: "Apoyo Venezuela",
   description:
-    "Información en vivo sobre centros de acopio y necesidades de insumos tras la emergencia.",
+    "¿Qué necesitas hoy? Encuentra centros de acopio, refugios, donaciones y contactos de emergencia en un solo lugar.",
   robots: "index, follow",
   icons: {
     icon: "/icon.svg",

@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { CentrosExplorer } from "@/components/centros/CentrosExplorer";
+import { OwnerActionBlock } from "@/components/OwnerActionBlock";
+import { PublicPageHeader } from "@/components/PublicPageHeader";
 import { getHomeDataWithFilters } from "@/lib/data";
 
 export const revalidate = 15;
@@ -32,30 +33,23 @@ export default async function CentrosPage({ searchParams }: CentrosPageProps) {
   return (
     <main className="min-h-screen bg-zinc-50">
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <header className="mb-8 border-b border-zinc-200 pb-4">
-          <Link
-            href="/"
-            className="cta-secondary text-sm font-semibold text-zinc-600"
-          >
-            ← Volver al hub de apoyo
-          </Link>
-          <p className="mt-3 text-sm font-black uppercase tracking-wide text-blue-800">
-            Centros de acopio
-          </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-zinc-900">
-            Dónde llevar ayuda
-          </h1>
-          <p className="mt-2 text-sm text-zinc-600">
-            Consulta centros activos, insumos que reciben y alertas de urgencia o
-            saturación reportadas por moderación.
-          </p>
-          <Link
-            href="/mapa"
-            className="cta-secondary mt-4 inline-flex rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold text-zinc-800"
-          >
-            Ver en mapa
-          </Link>
-        </header>
+        <PublicPageHeader
+          tag="Centros de acopio"
+          tagColorClass="text-blue-800"
+          title="Dónde llevar ayuda"
+          description="Consulta centros activos, insumos que reciben y alertas de urgencia o saturación reportadas por moderación."
+        />
+
+        <OwnerActionBlock
+          title="¿Manejas un centro de acopio?"
+          subtitle="Registra o actualiza tu centro"
+          description="Si eres responsable, desde aquí puedes crear un centro nuevo o entrar con tu código de gestión para actualizar datos, insumos y alertas."
+          registerHref="/centros/nuevo"
+          registerLabel="Registrar centro"
+          manageHref="/gestion"
+          manageLabel="Administrar con código"
+          colorTheme="blue"
+        />
 
         <CentrosExplorer
           estados={estados}

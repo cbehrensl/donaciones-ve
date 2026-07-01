@@ -6,7 +6,7 @@ import {
 } from "@/lib/moderacion-auth";
 
 interface StaffHubPageProps {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; created?: string }>;
 }
 
 function tokenHref(path: string, token: string): string {
@@ -70,19 +70,53 @@ export default async function StaffHubPage({ searchParams }: StaffHubPageProps) 
           Operación interna de apoyo
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Centraliza moderación de centros, alertas operativas y administración
-          de enlaces de ayuda.
+          Centraliza moderación de centros, refugios y administración de enlaces
+          de ayuda.
         </p>
       </header>
+
+      {params.created === "refugio" ? (
+        <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <p className="font-bold">Refugio creado</p>
+          <p className="mt-1">Ya está disponible en la vista pública si quedó activo.</p>
+        </section>
+      ) : null}
+
+      <section className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+        <p className="text-xs font-black uppercase tracking-wide text-blue-800">
+          Creación rápida
+        </p>
+        <h2 className="mt-1 text-lg font-black text-zinc-900">
+          Agregar información nueva
+        </h2>
+        <p className="mt-1 text-sm text-zinc-600">
+          Accesos directos para cargar centros de acopio y refugios sin volver al
+          hub público.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <Link
+            href="/centros/nuevo"
+            className="rounded-xl bg-blue-800 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-900"
+          >
+            + Crear centro de acopio
+          </Link>
+          <Link
+            href={tokenHref("/staff/refugios/nuevo", token)}
+            className="rounded-xl bg-purple-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-purple-800"
+          >
+            + Crear refugio (staff)
+          </Link>
+        </div>
+      </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
         <Link
           href={tokenHref("/moderacion", token)}
           className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
         >
-          <p className="text-base font-black text-zinc-900">Centros y alertas</p>
+          <p className="text-base font-black text-zinc-900">Moderación</p>
           <p className="mt-1 text-sm text-zinc-600">
-            Verificar centros, editar datos y gestionar alertas activas.
+            Verificar centros, revisar refugios y gestionar alertas activas.
           </p>
         </Link>
         <Link

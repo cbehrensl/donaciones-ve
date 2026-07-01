@@ -17,6 +17,7 @@ export function StaffNav({ token }: StaffNavProps) {
   const isHub = pathname === "/staff";
   const isModeracion = pathname === "/moderacion";
   const isDonaciones = pathname === "/staff/donaciones";
+  const isNuevoRefugio = pathname === "/staff/refugios/nuevo";
 
   return (
     <div className="mb-6 flex items-center justify-between gap-4">
@@ -49,7 +50,7 @@ export function StaffNav({ token }: StaffNavProps) {
               ›
             </span>
             <span className="font-semibold text-zinc-900">
-              Centros y alertas
+              Moderación
             </span>
           </>
         )}
@@ -61,6 +62,14 @@ export function StaffNav({ token }: StaffNavProps) {
             <span className="font-semibold text-zinc-900">Links de ayuda</span>
           </>
         )}
+        {isNuevoRefugio && (
+          <>
+            <span aria-hidden className="text-zinc-300">
+              ›
+            </span>
+            <span className="font-semibold text-zinc-900">Crear refugio</span>
+          </>
+        )}
       </nav>
 
       <div className="flex shrink-0 items-center gap-3">
@@ -69,7 +78,7 @@ export function StaffNav({ token }: StaffNavProps) {
             href={withToken("/moderacion", token)}
             className="text-xs font-semibold text-zinc-500 transition hover:text-zinc-800"
           >
-            Centros
+            Moderación
           </Link>
         )}
         {!isDonaciones && (
@@ -78,6 +87,14 @@ export function StaffNav({ token }: StaffNavProps) {
             className="text-xs font-semibold text-zinc-500 transition hover:text-zinc-800"
           >
             Links de ayuda
+          </Link>
+        )}
+        {!isNuevoRefugio && (
+          <Link
+            href={withToken("/staff/refugios/nuevo", token)}
+            className="text-xs font-semibold text-zinc-500 transition hover:text-zinc-800"
+          >
+            Nuevo refugio
           </Link>
         )}
       </div>

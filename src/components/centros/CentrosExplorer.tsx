@@ -6,10 +6,14 @@ import { CentroGrupoEstado } from "@/components/CentroGrupoEstado";
 import { FiltroGeografico } from "@/components/FiltroGeografico";
 import { PublicSearchChatbot } from "@/components/chatbots/PublicSearchChatbot";
 import {
+  ALERTA_UI_CONFIG,
   agruparAlertasActivasPorCentro,
+  agruparAlertasPorCentro,
   calcularSemaforoDesdeAlertas,
   filtrarAlertasActivas,
+  splitVisibleAlertasByTipo,
 } from "@/lib/alertas";
+import { formatWhatsappHref } from "@/lib/contact-links";
 import { SEMAFORO_PRIORITY } from "@/lib/semaforo";
 import type {
   AlertaCentro,
@@ -30,27 +34,6 @@ interface GrupoEstado {
   defaultOpen: boolean;
 }
 
-const ALERTA_UI: Record<
-  AlertaCentro["tipo"],
-  { label: string; icon: string; classes: string }
-> = {
-  NECESIDAD_URGENTE: {
-    label: "Solicitud urgente",
-    icon: "🚨",
-    classes: "border-red-200 bg-red-50 text-red-900",
-  },
-  INSUMO_SATURADO: {
-    label: "Alerta de saturación",
-    icon: "✅",
-    classes: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  },
-  ACTUALIZACION_CENTRO: {
-    label: "Actualización de centro",
-    icon: "ℹ️",
-    classes: "border-blue-200 bg-blue-50 text-blue-900",
-  },
-};
-
 function formatAlertTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -60,6 +43,18 @@ function formatAlertTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getUniqueAlertMessages(alertas: AlertaCentro[]): string[] {
+  const seen = new Set<string>();
+  const messages: string[] = [];
+  for (const alerta of alertas) {
+    const key = alerta.mensaje.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    messages.push(alerta.mensaje);
+  }
+  return messages;
 }
 
 function agruparCentrosPorEstado(
@@ -119,7 +114,7 @@ export interface CentrosExplorerProps {
   errors: DataLoadError[];
 }
 
-const ALERTAS_INICIALES = 5;
+const ALERTAS_INICIALES = 4;
 
 export function CentrosExplorer({
   estados,
@@ -132,7 +127,8 @@ export function CentrosExplorer({
 }: CentrosExplorerProps) {
   const [estadoId, setEstadoId] = useState(initialFilters.estadoId);
   const [municipioId, setMunicipioId] = useState(initialFilters.municipioId);
-  const [mostrarTodasAlertas, setMostrarTodasAlertas] = useState(false);
+  const [mostrarTodasUrgentes, setMostrarTodasUrgentes] = useState(false);
+  const [mostrarTodasSaturadas, setMostrarTodasSaturadas] = useState(false);
   const [alertasColapsadas, setAlertasColapsadas] = useState(false);
 
   const alertasActivas = filtrarAlertasActivas(alertas);
@@ -167,10 +163,18 @@ export function CentrosExplorer({
   const alertasFiltradas = hayFiltroActivo
     ? alertasActivas.filter((a) => centroIdsEnVista.has(a.centro_id))
     : alertasActivas;
-  const alertasVisibles = mostrarTodasAlertas
-    ? alertasFiltradas
-    : alertasFiltradas.slice(0, ALERTAS_INICIALES);
-  const hayMasAlertas = alertasFiltradas.length > ALERTAS_INICIALES;
+  const { urgentes: alertasUrgentesFiltradas, saturadas: alertasSaturadasFiltradas } =
+    splitVisibleAlertasByTipo(alertasFiltradas);
+  const urgentesAgrupadas = agruparAlertasPorCentro(alertasUrgentesFiltradas);
+  const saturadasAgrupadas = agruparAlertasPorCentro(alertasSaturadasFiltradas);
+  const urgentesVisibles = mostrarTodasUrgentes
+    ? urgentesAgrupadas
+    : urgentesAgrupadas.slice(0, ALERTAS_INICIALES);
+  const saturadasVisibles = mostrarTodasSaturadas
+    ? saturadasAgrupadas
+    : saturadasAgrupadas.slice(0, ALERTAS_INICIALES);
+  const hayMasUrgentes = urgentesAgrupadas.length > ALERTAS_INICIALES;
+  const hayMasSaturadas = saturadasAgrupadas.length > ALERTAS_INICIALES;
   const grupos = agruparCentrosPorEstado(
     centros,
     estados,
@@ -197,13 +201,13 @@ export function CentrosExplorer({
 
       <section
         id="seccion-alertas"
-        className="mb-8 overflow-hidden rounded-2xl border-2 border-red-200 bg-white shadow-sm"
+        className="mb-8"
       >
         {/* Header — siempre visible, toca para colapsar */}
         <button
           type="button"
           onClick={() => setAlertasColapsadas((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 border-b border-red-100 bg-red-50 px-4 py-3 text-left transition hover:bg-red-100"
+          className="flex w-full items-center justify-between gap-3 px-1 py-1.5 text-left"
           aria-expanded={!alertasColapsadas}
           aria-controls="alertas-body"
         >
@@ -237,7 +241,7 @@ export function CentrosExplorer({
         </button>
 
         {!alertasColapsadas && (
-          <div id="alertas-body" className="p-3 sm:p-4">
+          <div id="alertas-body" className="mt-3">
             {alertasFiltradas.length === 0 ? (
               <p className="rounded-lg border border-zinc-100 bg-zinc-50 p-3 text-center text-sm text-zinc-500">
                 {hayFiltroActivo
@@ -245,58 +249,179 @@ export function CentrosExplorer({
                   : "No hay alertas activas en este momento."}
               </p>
             ) : (
-              <>
-                <ul className="space-y-1.5">
-                  {alertasVisibles.map((alerta) => {
-                    const ui = ALERTA_UI[alerta.tipo];
-                    return (
-                      <li
-                        key={alerta.id}
-                        className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 ${ui.classes}`}
-                      >
-                        <span aria-hidden className="mt-0.5 shrink-0 text-sm">
-                          {ui.icon}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                            <span className="text-[11px] font-black uppercase tracking-wide">
-                              {ui.label}
-                            </span>
-                            <span className="truncate text-xs font-bold">
-                              {alerta.centros_acopio?.nombre ?? "Centro sin nombre"}
-                            </span>
-                            <span className="ml-auto shrink-0 text-[11px] font-semibold opacity-50">
-                              {formatAlertTime(alerta.created_at)}
-                            </span>
-                          </div>
-                          <p className="mt-0.5 text-xs leading-snug opacity-90">
-                            {alerta.mensaje}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+              <div className="grid gap-3 md:grid-cols-2">
+                <article className="rounded-xl border-2 border-red-300 bg-white p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-wide text-red-900">
+                      Solicitudes urgentes
+                    </h3>
+                    <span className="rounded-full border-2 border-red-300 bg-white px-2 py-0.5 text-xs font-bold text-red-800">
+                      {alertasUrgentesFiltradas.length}
+                    </span>
+                  </div>
+                  {alertasUrgentesFiltradas.length === 0 ? (
+                    <p className="rounded-lg border border-red-200 p-3 text-xs text-zinc-600">
+                      No hay solicitudes urgentes ahora.
+                    </p>
+                  ) : (
+                    <>
+                      <ul className="divide-y divide-zinc-200">
+                        {urgentesVisibles.map((grupo) => {
+                          const ui = ALERTA_UI_CONFIG["NECESIDAD_URGENTE"];
+                          const centro = grupo.centro;
+                          const mensajes = getUniqueAlertMessages(grupo.alertas);
+                          return (
+                            <li key={grupo.centroId} className="py-2 first:pt-0 last:pb-0">
+                              <div className="flex items-center gap-2">
+                                <span aria-hidden className="shrink-0 text-sm">
+                                  {ui.icon}
+                                </span>
+                                <p className="min-w-0 truncate text-xs font-bold">
+                                  {centro?.nombre ?? "Centro sin nombre"}
+                                </p>
+                                <span className="rounded-full border border-red-300 px-1.5 py-0.5 text-[10px] font-bold text-red-800">
+                                  {grupo.alertas.length}
+                                </span>
+                                <span className="ml-auto shrink-0 text-[11px] font-semibold opacity-60">
+                                  {formatAlertTime(grupo.latestCreatedAt)}
+                                </span>
+                              </div>
+                              <ul className="mt-1 space-y-0.5">
+                                {mensajes.map((mensaje) => (
+                                  <li key={mensaje} className="text-xs leading-snug text-zinc-700">
+                                    - {mensaje}
+                                  </li>
+                                ))}
+                              </ul>
+                              {centro?.contacto || centro?.ubicacion_url ? (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {centro.contacto ? (
+                                    <a
+                                      href={formatWhatsappHref(centro.contacto)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800"
+                                    >
+                                      WhatsApp
+                                    </a>
+                                  ) : null}
+                                  {centro.ubicacion_url ? (
+                                    <a
+                                      href={centro.ubicacion_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="rounded-md border border-blue-300 bg-white px-2 py-1 text-[11px] font-bold text-blue-800"
+                                    >
+                                      Ver mapa
+                                    </a>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {hayMasUrgentes ? (
+                        <button
+                          type="button"
+                          onClick={() => setMostrarTodasUrgentes((v) => !v)}
+                          className="mt-2 w-full rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-800"
+                        >
+                          {mostrarTodasUrgentes
+                            ? "Mostrar menos"
+                            : `Mostrar ${urgentesAgrupadas.length - ALERTAS_INICIALES} más`}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+                </article>
 
-                {hayMasAlertas && !mostrarTodasAlertas && (
-                  <button
-                    type="button"
-                    onClick={() => setMostrarTodasAlertas(true)}
-                    className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 text-xs font-bold text-zinc-600 transition hover:bg-zinc-100"
-                  >
-                    Mostrar {alertasFiltradas.length - ALERTAS_INICIALES} más
-                  </button>
-                )}
-                {mostrarTodasAlertas && alertasFiltradas.length > ALERTAS_INICIALES && (
-                  <button
-                    type="button"
-                    onClick={() => setMostrarTodasAlertas(false)}
-                    className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 text-xs font-bold text-zinc-600 transition hover:bg-zinc-100"
-                  >
-                    Mostrar menos
-                  </button>
-                )}
-              </>
+                <article className="rounded-xl border-2 border-emerald-300 bg-white p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-wide text-emerald-900">
+                      Centros saturados
+                    </h3>
+                    <span className="rounded-full border-2 border-emerald-300 bg-white px-2 py-0.5 text-xs font-bold text-emerald-800">
+                      {alertasSaturadasFiltradas.length}
+                    </span>
+                  </div>
+                  {alertasSaturadasFiltradas.length === 0 ? (
+                    <p className="rounded-lg border border-emerald-200 p-3 text-xs text-zinc-600">
+                      Ningún centro reporta saturación en este momento.
+                    </p>
+                  ) : (
+                    <>
+                      <ul className="divide-y divide-zinc-200">
+                        {saturadasVisibles.map((grupo) => {
+                          const ui = ALERTA_UI_CONFIG["INSUMO_SATURADO"];
+                          const centro = grupo.centro;
+                          const mensajes = getUniqueAlertMessages(grupo.alertas);
+                          return (
+                            <li key={grupo.centroId} className="py-2 first:pt-0 last:pb-0">
+                              <div className="flex items-center gap-2">
+                                <span aria-hidden className="shrink-0 text-sm">
+                                  {ui.icon}
+                                </span>
+                                <p className="min-w-0 truncate text-xs font-bold">
+                                  {centro?.nombre ?? "Centro sin nombre"}
+                                </p>
+                                <span className="rounded-full border border-emerald-300 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                  {grupo.alertas.length}
+                                </span>
+                                <span className="ml-auto shrink-0 text-[11px] font-semibold opacity-60">
+                                  {formatAlertTime(grupo.latestCreatedAt)}
+                                </span>
+                              </div>
+                              <ul className="mt-1 space-y-0.5">
+                                {mensajes.map((mensaje) => (
+                                  <li key={mensaje} className="text-xs leading-snug text-zinc-700">
+                                    - {mensaje}
+                                  </li>
+                                ))}
+                              </ul>
+                              {centro?.contacto || centro?.ubicacion_url ? (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {centro.contacto ? (
+                                    <a
+                                      href={formatWhatsappHref(centro.contacto)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800"
+                                    >
+                                      WhatsApp
+                                    </a>
+                                  ) : null}
+                                  {centro.ubicacion_url ? (
+                                    <a
+                                      href={centro.ubicacion_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="rounded-md border border-blue-300 bg-white px-2 py-1 text-[11px] font-bold text-blue-800"
+                                    >
+                                      Ver mapa
+                                    </a>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {hayMasSaturadas ? (
+                        <button
+                          type="button"
+                          onClick={() => setMostrarTodasSaturadas((v) => !v)}
+                          className="mt-2 w-full rounded-lg border border-emerald-200 bg-white py-2 text-xs font-bold text-emerald-800"
+                        >
+                          {mostrarTodasSaturadas
+                            ? "Mostrar menos"
+                            : `Mostrar ${saturadasAgrupadas.length - ALERTAS_INICIALES} más`}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+                </article>
+              </div>
             )}
           </div>
         )}
@@ -311,6 +436,7 @@ export function CentrosExplorer({
         <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500 sm:text-xs">
           Buscar centros registrados
         </h2>
+
         {errors.length === 0 && estados.length === 0 ? (
           <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             No se recibieron estados desde Supabase. Verifica que la tabla tenga
@@ -352,12 +478,14 @@ export function CentrosExplorer({
               </span>
             </p>
             <div className="flex gap-2">
-              <Link
-                href="/centros"
-                className="cta-secondary rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700"
-              >
-                Limpiar
-              </Link>
+              {hayFiltroActivo ? (
+                <Link
+                  href="/centros"
+                  className="cta-secondary rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700"
+                >
+                  Limpiar
+                </Link>
+              ) : null}
               <button
                 type="submit"
                 className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-900"

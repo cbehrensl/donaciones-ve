@@ -2,17 +2,25 @@ import Link from "next/link";
 import { SnackbarForm } from "@/components/SnackbarForm";
 import { SnackbarShell } from "@/components/SnackbarShell";
 import { ModeradorChatbot } from "@/components/chatbots/ModeradorChatbot";
+import { ModeracionFilterBar } from "@/components/moderacion/ModeracionFilterBar";
+import { ModeracionTabs } from "@/components/moderacion/ModeracionTabs";
 import { StaffNav } from "@/components/navigation/StaffNav";
 import {
+  ALERTA_UI_CONFIG,
   agruparAlertasActivasPorCentro,
+  agruparAlertasPorCentro,
   calcularSemaforoDesdeAlertas,
+  splitVisibleAlertasByTipo,
 } from "@/lib/alertas";
+import { formatWhatsappHref } from "@/lib/contact-links";
 import {
   getCategoriasInsumo,
   getAlertasRecientes,
   getCentrosParaModeracion,
   getEstados,
+  getRefugiosParaModeracion,
   getResumenModeracion,
+  getResumenRefugiosModeracion,
 } from "@/lib/data";
 import {
   getModeratorAccessToken,
@@ -25,7 +33,7 @@ import {
 import {
   SEMAFORO_DOT,
 } from "@/lib/semaforo";
-import type { SemafaroEstado } from "@/lib/types";
+import type { ModeracionTab, SemafaroEstado } from "@/lib/types";
 import {
   agregarNecesidadModeracion,
   actualizarDetallesCentroModeracion,
@@ -42,9 +50,13 @@ export const revalidate = 15;
 interface ModeracionPageProps {
   searchParams: Promise<{
     token?: string;
+    tab?: string;
     q?: string;
     estatus?: string;
     verificacion?: string;
+    actividad?: string;
+    confirmacion?: string;
+    saturacion?: string;
     estado?: string;
     page?: string;
   }>;
@@ -64,23 +76,45 @@ const VERIFICACION_OPTIONS = [
   { value: "verificados", label: "Verificados" },
 ];
 
-const ALERTA_UI = {
-  NECESIDAD_URGENTE: {
-    label: "Solicitud urgente",
-    icon: "🚨",
-    classes: "border-red-200 bg-red-50 text-red-900",
-  },
-  INSUMO_SATURADO: {
-    label: "Saturación reportada",
-    icon: "✅",
-    classes: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  },
-  ACTUALIZACION_CENTRO: {
-    label: "Actualización",
-    icon: "ℹ️",
-    classes: "border-blue-200 bg-blue-50 text-blue-900",
-  },
-} as const;
+const ACTIVIDAD_OPTIONS = [
+  { value: "todos", label: "Todos" },
+  { value: "activos", label: "Activos" },
+  { value: "inactivos", label: "Inactivos" },
+];
+
+const CONFIRMACION_OPTIONS = [
+  { value: "todos", label: "Todos" },
+  { value: "pendientes", label: "Pendientes" },
+  { value: "confirmados", label: "Confirmados" },
+];
+
+const SATURACION_OPTIONS = [
+  { value: "todos", label: "Todos" },
+  { value: "saturados", label: "Saturados" },
+  { value: "normal", label: "Con capacidad" },
+];
+
+function parseModeracionTab(value?: string): ModeracionTab {
+  return value === "refugios" ? "refugios" : "centros";
+}
+
+function buildModeracionHref(
+  token: string,
+  tab: ModeracionTab,
+  filters: Record<string, string | undefined>,
+  page = 1,
+): string {
+  const params = new URLSearchParams({ token, tab });
+  for (const [key, value] of Object.entries(filters)) {
+    if (value && value !== "todos") {
+      params.set(key, value);
+    }
+  }
+  if (page > 1) {
+    params.set("page", String(page));
+  }
+  return `/moderacion?${params.toString()}`;
+}
 
 function formatAlertTime(value: string): string {
   const date = new Date(value);
@@ -91,6 +125,18 @@ function formatAlertTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getUniqueAlertMessages(alertas: { mensaje: string }[]): string[] {
+  const seen = new Set<string>();
+  const messages: string[] = [];
+  for (const alerta of alertas) {
+    const key = alerta.mensaje.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    messages.push(alerta.mensaje);
+  }
+  return messages;
 }
 
 function getEstatusLabel(estatus?: string): string {
@@ -113,9 +159,13 @@ export default async function ModeracionPage({
   const PAGE_SIZE = 20;
   const params = await searchParams;
   const token = params.token?.trim() ?? "";
+  const activeTab = parseModeracionTab(params.tab);
   const textoFiltro = params.q?.trim().toLowerCase() ?? "";
   const estatusFiltro = params.estatus ?? "todos";
   const verificacionFiltro = params.verificacion ?? "todos";
+  const actividadFiltro = params.actividad ?? "todos";
+  const confirmacionFiltro = params.confirmacion ?? "todos";
+  const saturacionFiltro = params.saturacion ?? "todos";
   const estadoFiltro = params.estado ?? "";
   const page =
     Number.isFinite(Number(params.page)) && Number(params.page) > 0
@@ -124,25 +174,87 @@ export default async function ModeracionPage({
   const hasToken = Boolean(getModeratorAccessToken());
   const hasSupabaseService = isSupabaseServiceConfigured();
   const isAuthorized = isModeratorTokenValid(token);
-  const [centrosResponse, resumen, categoriasInsumo, alertasRecientes, estados] =
+
+  const centrosFilters = {
+    q: textoFiltro,
+    estatus: estatusFiltro,
+    verificacion: verificacionFiltro,
+    estado: estadoFiltro,
+  };
+  const refugiosFilters = {
+    q: textoFiltro,
+    actividad: actividadFiltro,
+    confirmacion: confirmacionFiltro,
+    saturacion: saturacionFiltro,
+    estado: estadoFiltro,
+  };
+
+  const [
+    centrosResponse,
+    refugiosResponse,
+    resumen,
+    resumenRefugios,
+    categoriasInsumo,
+    alertasRecientes,
+    estados,
+  ] =
     isAuthorized && hasSupabaseService
       ? await Promise.all([
-          getCentrosParaModeracion({
-            q: textoFiltro,
-            estatus: estatusFiltro,
-            verificacion: verificacionFiltro,
-            estadoId: estadoFiltro,
-            page: page - 1,
-            pageSize: PAGE_SIZE,
-          }),
+          activeTab === "centros"
+            ? getCentrosParaModeracion({
+                q: textoFiltro,
+                estatus: estatusFiltro,
+                verificacion: verificacionFiltro,
+                estadoId: estadoFiltro,
+                page: page - 1,
+                pageSize: PAGE_SIZE,
+              })
+            : Promise.resolve({
+                centros: [],
+                meta: {
+                  page: 0,
+                  pageSize: PAGE_SIZE,
+                  hasNextPage: false,
+                  hasPrevPage: false,
+                },
+              }),
+          activeTab === "refugios"
+            ? getRefugiosParaModeracion({
+                q: textoFiltro,
+                actividad: actividadFiltro,
+                confirmacion: confirmacionFiltro,
+                saturacion: saturacionFiltro,
+                estadoId: estadoFiltro,
+                page: page - 1,
+                pageSize: PAGE_SIZE,
+              })
+            : Promise.resolve({
+                refugios: [],
+                meta: {
+                  page: 0,
+                  pageSize: PAGE_SIZE,
+                  hasNextPage: false,
+                  hasPrevPage: false,
+                },
+              }),
           getResumenModeracion(),
-          getCategoriasInsumo(),
-          getAlertasRecientes(200),
+          getResumenRefugiosModeracion(),
+          activeTab === "centros" ? getCategoriasInsumo() : Promise.resolve([]),
+          activeTab === "centros" ? getAlertasRecientes(200) : Promise.resolve([]),
           getEstados(),
         ])
       : [
           {
             centros: [],
+            meta: {
+              page: 0,
+              pageSize: PAGE_SIZE,
+              hasNextPage: false,
+              hasPrevPage: false,
+            },
+          },
+          {
+            refugios: [],
             meta: {
               page: 0,
               pageSize: PAGE_SIZE,
@@ -158,13 +270,27 @@ export default async function ModeracionPage({
             ocultos: 0,
             urgencias: 0,
           },
+          {
+            total: 0,
+            activos: 0,
+            inactivos: 0,
+            pendientes: 0,
+            confirmados: 0,
+            saturados: 0,
+          },
           [],
           [],
           [],
         ];
   const centros = centrosResponse.centros;
-  const meta = centrosResponse.meta;
+  const centrosMeta = centrosResponse.meta;
+  const refugios = refugiosResponse.refugios;
+  const refugiosMeta = refugiosResponse.meta;
   const alertasActivas = alertasRecientes;
+  const { urgentes: alertasRecientesUrgentes, saturadas: alertasRecientesSaturadas } =
+    splitVisibleAlertasByTipo(alertasActivas);
+  const alertasRecientesUrgentesAgrupadas = agruparAlertasPorCentro(alertasRecientesUrgentes);
+  const alertasRecientesSaturadasAgrupadas = agruparAlertasPorCentro(alertasRecientesSaturadas);
   const alertasPorCentro = agruparAlertasActivasPorCentro(alertasActivas);
   const centrosVisibles = centros.filter((centro) => centro.estatus !== "cerrado");
   const centrosPendientes = centrosVisibles.filter((centro) => !centro.verificado);
@@ -207,27 +333,29 @@ export default async function ModeracionPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
   const centrosFiltrados = centros;
-  const paginationParams = new URLSearchParams();
-  paginationParams.set("token", token);
-  if (textoFiltro) paginationParams.set("q", textoFiltro);
-  if (estatusFiltro && estatusFiltro !== "todos") {
-    paginationParams.set("estatus", estatusFiltro);
-  }
-  if (verificacionFiltro && verificacionFiltro !== "todos") {
-    paginationParams.set("verificacion", verificacionFiltro);
-  }
-  if (estadoFiltro) {
-    paginationParams.set("estado", estadoFiltro);
-  }
-  const prevHref = `/moderacion?${new URLSearchParams({
-    ...Object.fromEntries(paginationParams.entries()),
-    page: String(Math.max(1, page - 1)),
-  }).toString()}`;
-  const nextHref = `/moderacion?${new URLSearchParams({
-    ...Object.fromEntries(paginationParams.entries()),
-    page: String(page + 1),
-  }).toString()}`;
-  const clearHref = `/moderacion?${new URLSearchParams({ token }).toString()}`;
+  const refugiosFiltrados = refugios;
+  const activeMeta = activeTab === "centros" ? centrosMeta : refugiosMeta;
+  const centrosTabHref = buildModeracionHref(token, "centros", {}, 1);
+  const refugiosTabHref = buildModeracionHref(token, "refugios", {}, 1);
+  const clearHref = buildModeracionHref(
+    token,
+    activeTab,
+    activeTab === "centros" ? {} : {},
+    1,
+  );
+  const prevHref = buildModeracionHref(
+    token,
+    activeTab,
+    activeTab === "centros" ? centrosFilters : refugiosFilters,
+    Math.max(1, page - 1),
+  );
+  const nextHref = buildModeracionHref(
+    token,
+    activeTab,
+    activeTab === "centros" ? centrosFilters : refugiosFilters,
+    page + 1,
+  );
+  const nuevoRefugioHref = `/staff/refugios/nuevo?${new URLSearchParams({ token }).toString()}`;
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-6">
@@ -237,11 +365,11 @@ export default async function ModeracionPage({
           Panel de moderación
         </p>
         <h1 className="mt-1 text-3xl font-black tracking-tight text-zinc-900">
-          Dashboard de centros de acopio
+          Dashboard de moderación
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Revisa centros nuevos, verifica información y publica alertas de
-          urgencia o saturación para orientar donaciones.
+          Revisa centros de acopio y refugios. Publica avisos claros para
+          orientar mejor a quienes quieren ayudar.
         </p>
         <div className="mt-3 flex gap-3">
           <Link href="/" className="cta-secondary inline-block text-sm font-semibold">
@@ -312,37 +440,165 @@ export default async function ModeracionPage({
         <section className="space-y-6">
           <ModeradorChatbot token={token} />
 
+          <ModeracionTabs
+            activeTab={activeTab}
+            centrosHref={centrosTabHref}
+            refugiosHref={refugiosTabHref}
+          />
+
+          {activeTab === "centros" ? (
+            <>
           {alertasRecientes.length > 0 ? (
-            <section className="rounded-xl border border-zinc-200 bg-white p-3">
+            <section className="space-y-2">
               <h2 className="text-xs font-black uppercase tracking-wide text-zinc-900">
                 Alertas recientes
               </h2>
               <p className="mt-1 text-xs text-zinc-600">
-                Solicitudes urgentes y saturaciones reportadas por los equipos.
+                Separamos solicitudes urgentes y centros saturados para decidir
+                más rápido.
               </p>
-              <ul className="mt-2 space-y-2 text-sm">
-                {alertasRecientes.slice(0, 6).map((alerta) => (
-                  <li key={alerta.id} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-2">
-                    <div
-                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black uppercase tracking-wide ${ALERTA_UI[alerta.tipo].classes}`}
-                    >
-                      <span aria-hidden>{ALERTA_UI[alerta.tipo].icon}</span>
-                      {ALERTA_UI[alerta.tipo].label}
-                    </div>
-                    <p className="mt-1 font-bold text-zinc-900">
-                      {alerta.centros_acopio?.nombre ?? "Centro"}
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                <div className="rounded-lg border-2 border-red-300 bg-white p-2.5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wide text-red-900">
+                      Solicitudes urgentes
+                    </h3>
+                    <span className="rounded-full border-2 border-red-300 bg-white px-2 py-0.5 text-xs font-bold text-red-800">
+                      {alertasRecientesUrgentes.length}
+                    </span>
+                  </div>
+                  {alertasRecientesUrgentesAgrupadas.length > 0 ? (
+                    <ul className="divide-y divide-zinc-200 text-sm">
+                      {alertasRecientesUrgentesAgrupadas.slice(0, 4).map((grupo) => {
+                        const centro = grupo.centro;
+                        const mensajes = getUniqueAlertMessages(grupo.alertas);
+                        return (
+                          <li key={grupo.centroId} className="py-2 first:pt-0 last:pb-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-zinc-900">
+                                {centro?.nombre ?? "Centro"}
+                              </p>
+                              <span className="rounded-full border border-red-300 px-1.5 py-0.5 text-[10px] font-bold text-red-700">
+                                {grupo.alertas.length}
+                              </span>
+                            </div>
+                            <ul className="mt-1 space-y-0.5">
+                              {mensajes.map((mensaje) => (
+                                <li key={mensaje} className="text-zinc-700">
+                                  - {mensaje}
+                                </li>
+                              ))}
+                            </ul>
+                            {centro?.contacto || centro?.ubicacion_url ? (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {centro.contacto ? (
+                                  <a
+                                    href={formatWhatsappHref(centro.contacto)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded border border-emerald-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800"
+                                  >
+                                    WhatsApp
+                                  </a>
+                                ) : null}
+                                {centro.ubicacion_url ? (
+                                  <a
+                                    href={centro.ubicacion_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded border border-blue-300 bg-white px-2 py-1 text-[11px] font-bold text-blue-800"
+                                  >
+                                    Ver mapa
+                                  </a>
+                                ) : null}
+                              </div>
+                            ) : null}
+                            <p className="mt-1 text-xs text-zinc-500">
+                              Reportado a las {formatAlertTime(grupo.latestCreatedAt)}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="rounded border border-red-200 bg-white px-2 py-2 text-xs text-zinc-600">
+                      No hay solicitudes urgentes recientes.
                     </p>
-                    <p className="text-zinc-700">{alerta.mensaje}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Reportado a las {formatAlertTime(alerta.created_at)}
+                  )}
+                </div>
+                <div className="rounded-lg border-2 border-emerald-300 bg-white p-2.5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wide text-emerald-900">
+                      Centros saturados
+                    </h3>
+                    <span className="rounded-full border-2 border-emerald-300 bg-white px-2 py-0.5 text-xs font-bold text-emerald-800">
+                      {alertasRecientesSaturadas.length}
+                    </span>
+                  </div>
+                  {alertasRecientesSaturadasAgrupadas.length > 0 ? (
+                    <ul className="divide-y divide-zinc-200 text-sm">
+                      {alertasRecientesSaturadasAgrupadas.slice(0, 4).map((grupo) => {
+                        const centro = grupo.centro;
+                        const mensajes = getUniqueAlertMessages(grupo.alertas);
+                        return (
+                          <li key={grupo.centroId} className="py-2 first:pt-0 last:pb-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-zinc-900">
+                                {centro?.nombre ?? "Centro"}
+                              </p>
+                              <span className="rounded-full border border-emerald-300 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                {grupo.alertas.length}
+                              </span>
+                            </div>
+                            <ul className="mt-1 space-y-0.5">
+                              {mensajes.map((mensaje) => (
+                                <li key={mensaje} className="text-zinc-700">
+                                  - {mensaje}
+                                </li>
+                              ))}
+                            </ul>
+                            {centro?.contacto || centro?.ubicacion_url ? (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {centro.contacto ? (
+                                  <a
+                                    href={formatWhatsappHref(centro.contacto)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded border border-emerald-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800"
+                                  >
+                                    WhatsApp
+                                  </a>
+                                ) : null}
+                                {centro.ubicacion_url ? (
+                                  <a
+                                    href={centro.ubicacion_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded border border-blue-300 bg-white px-2 py-1 text-[11px] font-bold text-blue-800"
+                                  >
+                                    Ver mapa
+                                  </a>
+                                ) : null}
+                              </div>
+                            ) : null}
+                            <p className="mt-1 text-xs text-zinc-500">
+                              Reportado a las {formatAlertTime(grupo.latestCreatedAt)}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="rounded border border-emerald-200 bg-white px-2 py-2 text-xs text-zinc-600">
+                      No hay centros saturados recientes.
                     </p>
-                  </li>
-                ))}
-              </ul>
+                  )}
+                </div>
+              </div>
             </section>
           ) : null}
 
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-6 lg:gap-3">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
             <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Total
@@ -351,15 +607,7 @@ export default async function ModeracionPage({
                 {resumen.total}
               </p>
             </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                Visibles
-              </p>
-              <p className="mt-1 text-2xl font-black tabular-nums text-emerald-900 lg:text-3xl">
-                {resumen.visibles}
-              </p>
-            </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 shadow-sm">
+            <div className="rounded-xl border border-amber-200 bg-white px-3 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
                 Pendientes
               </p>
@@ -367,15 +615,7 @@ export default async function ModeracionPage({
                 {resumen.pendientes}
               </p>
             </div>
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
-                Verificados
-              </p>
-              <p className="mt-1 text-2xl font-black tabular-nums text-blue-900 lg:text-3xl">
-                {resumen.verificados}
-              </p>
-            </div>
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 shadow-sm">
+            <div className="rounded-xl border border-red-200 bg-white px-3 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-red-700">
                 Alertas urgentes
               </p>
@@ -383,12 +623,12 @@ export default async function ModeracionPage({
                 {alertasUrgentes}
               </p>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                Ocultos
+            <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                Verificados
               </p>
-              <p className="mt-1 text-2xl font-black tabular-nums text-zinc-700 lg:text-3xl">
-                {resumen.ocultos}
+              <p className="mt-1 text-2xl font-black tabular-nums text-emerald-900 lg:text-3xl">
+                {resumen.verificados}
               </p>
             </div>
           </div>
@@ -451,96 +691,25 @@ export default async function ModeracionPage({
             </div>
           </details>
 
-          <form
-            method="get"
-            className="sticky top-0 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 shadow-sm backdrop-blur-sm"
-          >
-            <input type="hidden" name="token" value={token} />
-            <input type="hidden" name="page" value="1" />
-            <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
-              <input
-                name="q"
-                type="search"
-                defaultValue={params.q ?? ""}
-                placeholder="Buscar nombre, dirección, responsable..."
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              />
-              <select
-                name="estado"
-                defaultValue={estadoFiltro}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              >
-                <option value="">Todos los estados</option>
-                {estados.map((estado) => (
-                  <option key={estado.id} value={estado.id}>
-                    {estado.nombre}
-                  </option>
-                ))}
-              </select>
-              <select
-                name="estatus"
-                defaultValue={estatusFiltro}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              >
-                {ESTATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                name="verificacion"
-                defaultValue={verificacionFiltro}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              >
-                {VERIFICACION_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-900"
-              >
-                Filtrar
-              </button>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-              <div className="flex items-center gap-3">
-                <span>
-                  <strong className="text-zinc-700">{centrosFiltrados.length}</strong> centros · pág. <strong className="text-zinc-700">{page}</strong>
-                </span>
-                <Link href={clearHref} className="font-semibold text-blue-700 transition hover:text-blue-900">
-                  Limpiar
-                </Link>
-              </div>
-              <div className="flex items-center gap-1">
-                <Link
-                  href={prevHref}
-                  aria-disabled={!meta.hasPrevPage}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-bold ${
-                    meta.hasPrevPage
-                      ? "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
-                      : "pointer-events-none border-zinc-100 text-zinc-300"
-                  }`}
-                >
-                  ←
-                </Link>
-                <Link
-                  href={nextHref}
-                  aria-disabled={!meta.hasNextPage}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-bold ${
-                    meta.hasNextPage
-                      ? "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
-                      : "pointer-events-none border-zinc-100 text-zinc-300"
-                  }`}
-                >
-                  →
-                </Link>
-              </div>
-            </div>
-          </form>
+          <ModeracionFilterBar
+            tab="centros"
+            token={token}
+            defaultQuery={params.q ?? ""}
+            defaultEstado={estadoFiltro}
+            defaultEstatus={estatusFiltro}
+            defaultVerificacion={verificacionFiltro}
+            estados={estados}
+            estatusOptions={ESTATUS_OPTIONS}
+            verificacionOptions={VERIFICACION_OPTIONS}
+            resultsCount={centrosFiltrados.length}
+            resultsLabel="centros"
+            page={page}
+            clearHref={clearHref}
+            prevHref={prevHref}
+            nextHref={nextHref}
+            hasPrevPage={activeMeta.hasPrevPage}
+            hasNextPage={activeMeta.hasNextPage}
+          />
 
           {centrosFiltrados.length === 0 ? (
             <p className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500">
@@ -666,40 +835,54 @@ export default async function ModeracionPage({
                             </span>
                           </div>
                           {alertasCentro.length > 0 ? (
-                            <ul className="space-y-2">
-                              {alertasCentro.map((alerta) => (
-                                <li
-                                  key={alerta.id}
-                                  className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-zinc-200 bg-white px-2 py-2"
-                                >
-                                  <div className="min-w-0 flex-1">
-                                    <span
-                                      className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                                        alerta.tipo === "NECESIDAD_URGENTE"
-                                          ? "bg-red-100 text-red-800"
-                                          : "bg-emerald-100 text-emerald-800"
-                                      }`}
+                            <div className="space-y-2">
+                              {([
+                                "NECESIDAD_URGENTE",
+                                "INSUMO_SATURADO",
+                              ] as const).map((tipo) => {
+                                const alertasPorTipo = alertasCentro.filter(
+                                  (alerta) => alerta.tipo === tipo,
+                                );
+                                if (alertasPorTipo.length === 0) return null;
+                                const ui = ALERTA_UI_CONFIG[tipo];
+                                return (
+                                  <div
+                                    key={`${centro.id}-${tipo}`}
+                                    className="rounded-md border border-zinc-200 bg-white px-2 py-2"
+                                  >
+                                    <p
+                                      className={`mb-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold ${ui.badgeClasses}`}
                                     >
-                                      {alerta.tipo === "NECESIDAD_URGENTE"
-                                        ? "Urgencia"
-                                        : "Saturación"}
-                                    </span>
-                                    <p className="mt-1 text-xs text-zinc-700">{alerta.mensaje}</p>
+                                      <span aria-hidden>{ui.icon}</span>
+                                      {ui.shortLabel} ({alertasPorTipo.length})
+                                    </p>
+                                    <ul className="space-y-1.5">
+                                      {alertasPorTipo.map((alerta) => (
+                                        <li
+                                          key={alerta.id}
+                                          className="flex flex-wrap items-start justify-between gap-2 rounded border border-zinc-100 bg-zinc-50 px-2 py-1.5"
+                                        >
+                                          <p className="min-w-0 flex-1 text-xs text-zinc-700">
+                                            {alerta.mensaje}
+                                          </p>
+                                          <SnackbarForm action={eliminarAlertaModeracion}>
+                                            <input type="hidden" name="token" value={token} />
+                                            <input type="hidden" name="centroId" value={centro.id} />
+                                            <input type="hidden" name="alertaId" value={alerta.id} />
+                                            <button
+                                              type="submit"
+                                              className="rounded border border-red-200 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-50"
+                                            >
+                                              Eliminar
+                                            </button>
+                                          </SnackbarForm>
+                                        </li>
+                                      ))}
+                                    </ul>
                                   </div>
-                                  <SnackbarForm action={eliminarAlertaModeracion}>
-                                    <input type="hidden" name="token" value={token} />
-                                    <input type="hidden" name="centroId" value={centro.id} />
-                                    <input type="hidden" name="alertaId" value={alerta.id} />
-                                    <button
-                                      type="submit"
-                                      className="rounded border border-red-200 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-50"
-                                    >
-                                      Eliminar
-                                    </button>
-                                  </SnackbarForm>
-                                </li>
-                              ))}
-                            </ul>
+                                );
+                              })}
+                            </div>
                           ) : (
                             <p className="text-xs text-zinc-500">
                               No hay alertas activas para este centro.
@@ -717,8 +900,8 @@ export default async function ModeracionPage({
                                 defaultValue="NECESIDAD_URGENTE"
                                 className="rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
                               >
-                                <option value="NECESIDAD_URGENTE">Solicitud urgente</option>
-                                <option value="INSUMO_SATURADO">Alerta de saturación</option>
+                                <option value="NECESIDAD_URGENTE">Necesita ayuda ahora</option>
+                                <option value="INSUMO_SATURADO">No llevar por ahora (saturado)</option>
                               </select>
                               <select
                                 name="duracion_horas"
@@ -734,7 +917,7 @@ export default async function ModeracionPage({
                             </div>
                             <input
                               name="mensaje"
-                              placeholder="Escribe el mensaje que verán los donantes"
+                              placeholder="Ej. Solo necesitamos agua potable y medicinas hoy."
                               className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs"
                               maxLength={220}
                               required
@@ -743,48 +926,43 @@ export default async function ModeracionPage({
                               type="submit"
                               className="w-full rounded bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800 sm:w-auto"
                             >
-                              Publicar alerta
+                              Publicar aviso
                             </button>
                           </SnackbarForm>
                         </div>
 
                         {/* Needs list */}
                         {necesidades.length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-zinc-100 text-left text-xs font-bold uppercase tracking-wide text-zinc-400">
-                                  <th className="pb-1.5 pr-3">Insumo</th>
-                                  <th className="pb-1.5"></th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-zinc-50">
-                                {necesidades.map((necesidad) => (
-                                  <tr key={necesidad.id} className="group">
-                                    <td className="py-1.5 pr-3">
-                                      <span className="font-semibold text-zinc-800">{necesidad.tipo_insumo}</span>
-                                      {necesidad.detalle ? (
-                                        <span className="ml-1 text-xs text-zinc-400">{necesidad.detalle}</span>
-                                      ) : null}
-                                    </td>
-                                    <td className="py-1.5 text-right">
-                                      <SnackbarForm action={eliminarNecesidadModeracion}>
-                                        <input type="hidden" name="token" value={token} />
-                                        <input type="hidden" name="centroId" value={centro.id} />
-                                        <input type="hidden" name="necesidadId" value={necesidad.id} />
-                                        <button
-                                          type="submit"
-                                          className="rounded px-2 py-0.5 text-[10px] font-bold text-red-600 opacity-0 hover:bg-red-50 group-hover:opacity-100"
-                                        >
-                                          Quitar
-                                        </button>
-                                      </SnackbarForm>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                          <ul className="space-y-2">
+                            {necesidades.map((necesidad) => (
+                              <li
+                                key={necesidad.id}
+                                className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-zinc-100 bg-white px-3 py-2.5"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-semibold text-zinc-800">
+                                    {necesidad.tipo_insumo}
+                                  </span>
+                                  {necesidad.detalle ? (
+                                    <p className="mt-0.5 text-xs text-zinc-500">
+                                      {necesidad.detalle}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <SnackbarForm action={eliminarNecesidadModeracion}>
+                                  <input type="hidden" name="token" value={token} />
+                                  <input type="hidden" name="centroId" value={centro.id} />
+                                  <input type="hidden" name="necesidadId" value={necesidad.id} />
+                                  <button
+                                    type="submit"
+                                    className="text-xs font-semibold text-red-600 underline-offset-2 hover:underline"
+                                  >
+                                    Quitar
+                                  </button>
+                                </SnackbarForm>
+                              </li>
+                            ))}
+                          </ul>
                         ) : (
                           <p className="text-xs text-zinc-400">Sin insumos registrados.</p>
                         )}
@@ -833,52 +1011,52 @@ export default async function ModeracionPage({
                             <div className="grid gap-2 sm:grid-cols-2">
                               <label className="text-xs font-bold text-zinc-600">
                                 Nombre
-                                <input name="nombre" defaultValue={centro.nombre} required className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="nombre" defaultValue={centro.nombre} required className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                               <label className="text-xs font-bold text-zinc-600">
                                 Contacto
-                                <input name="contacto" defaultValue={centro.contacto ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="contacto" defaultValue={centro.contacto ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                             </div>
                             <label className="text-xs font-bold text-zinc-600">
                               Dirección
-                              <input name="direccion" defaultValue={centro.direccion} required className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                              <input name="direccion" defaultValue={centro.direccion} required className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                             </label>
                             <div className="grid gap-2 sm:grid-cols-2">
                               <label className="text-xs font-bold text-zinc-600">
                                 Link Maps
-                                <input name="ubicacion_url" type="url" defaultValue={centro.ubicacion_url ?? ""} placeholder="https://maps.google.com/..." className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="ubicacion_url" type="url" defaultValue={centro.ubicacion_url ?? ""} placeholder="https://maps.google.com/..." className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                               <label className="text-xs font-bold text-zinc-600">
                                 Vialidad
-                                <input name="vialidad" defaultValue={centro.estado_vialidad ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="vialidad" defaultValue={centro.estado_vialidad ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                             </div>
                             <div className="grid gap-2 sm:grid-cols-3">
                               <label className="text-xs font-bold text-zinc-600">
                                 Inicio recepción
-                                <input name="fecha_inicio_recepcion" type="date" defaultValue={centro.fecha_inicio_recepcion ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="fecha_inicio_recepcion" type="date" defaultValue={centro.fecha_inicio_recepcion ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                               <label className="text-xs font-bold text-zinc-600">
                                 Fin recepción
-                                <input name="fecha_fin_recepcion" type="date" defaultValue={centro.fecha_fin_recepcion ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="fecha_fin_recepcion" type="date" defaultValue={centro.fecha_fin_recepcion ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                               <label className="text-xs font-bold text-zinc-600">
                                 Horario
-                                <input name="horario_recepcion" defaultValue={centro.horario_recepcion ?? ""} placeholder="Lun-Sáb 8am-5pm" className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="horario_recepcion" defaultValue={centro.horario_recepcion ?? ""} placeholder="Lun-Sáb 8am-5pm" className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                             </div>
                             <div className="grid gap-2 sm:grid-cols-2">
                               <label className="text-xs font-bold text-zinc-600">
                                 Responsable
-                                <input name="responsable_nombre" defaultValue={centro.responsable_nombre ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="responsable_nombre" defaultValue={centro.responsable_nombre ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                               <label className="text-xs font-bold text-zinc-600">
                                 Tel. responsable
-                                <input name="responsable_telefono" defaultValue={centro.responsable_telefono ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-xs" />
+                                <input name="responsable_telefono" defaultValue={centro.responsable_telefono ?? ""} className="mt-0.5 w-full rounded border border-zinc-300 bg-white px-2 py-2.5 text-xs" />
                               </label>
                             </div>
-                            <button type="submit" className="w-full rounded bg-zinc-800 px-3 py-1.5 text-xs font-bold text-white sm:w-auto">
+                            <button type="submit" className="w-full rounded bg-zinc-800 px-3 py-2.5 text-xs font-bold text-white sm:w-auto">
                               Guardar cambios
                             </button>
                           </SnackbarForm>
@@ -890,6 +1068,181 @@ export default async function ModeracionPage({
               );
             })}
             </div>
+          )}
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-purple-200 bg-white px-4 py-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-purple-800">
+                    Directorio de refugios
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    {resumenRefugios.activos} activos · {resumenRefugios.pendientes} pendientes ·{" "}
+                    {resumenRefugios.saturados} saturados
+                  </p>
+                </div>
+                <Link
+                  href={nuevoRefugioHref}
+                  className="rounded-lg border border-purple-300 bg-purple-50 px-3 py-2 text-xs font-bold text-purple-900 hover:bg-purple-100"
+                >
+                  + Crear refugio
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+                <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    Total
+                  </p>
+                  <p className="mt-1 text-2xl font-black tabular-nums text-zinc-900">
+                    {resumenRefugios.total}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                    Activos
+                  </p>
+                  <p className="mt-1 text-2xl font-black tabular-nums text-emerald-900">
+                    {resumenRefugios.activos}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-amber-200 bg-white px-3 py-3 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                    Pendientes
+                  </p>
+                  <p className="mt-1 text-2xl font-black tabular-nums text-amber-900">
+                    {resumenRefugios.pendientes}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-red-200 bg-white px-3 py-3 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-red-700">
+                    Saturados
+                  </p>
+                  <p className="mt-1 text-2xl font-black tabular-nums text-red-900">
+                    {resumenRefugios.saturados}
+                  </p>
+                </div>
+              </div>
+
+              <ModeracionFilterBar
+                tab="refugios"
+                token={token}
+                defaultQuery={params.q ?? ""}
+                defaultEstado={estadoFiltro}
+                defaultActividad={actividadFiltro}
+                defaultConfirmacion={confirmacionFiltro}
+                defaultSaturacion={saturacionFiltro}
+                estados={estados}
+                actividadOptions={ACTIVIDAD_OPTIONS}
+                confirmacionOptions={CONFIRMACION_OPTIONS}
+                saturacionOptions={SATURACION_OPTIONS}
+                resultsCount={refugiosFiltrados.length}
+                resultsLabel="refugios"
+                page={page}
+                clearHref={clearHref}
+                prevHref={prevHref}
+                nextHref={nextHref}
+                hasPrevPage={activeMeta.hasPrevPage}
+                hasNextPage={activeMeta.hasNextPage}
+              />
+
+              {refugiosFiltrados.length === 0 ? (
+                <p className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500">
+                  No hay refugios que coincidan con este filtro.
+                </p>
+              ) : (
+                <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white shadow-sm">
+                  {refugiosFiltrados.map((refugio) => {
+                    const whatsappHref = refugio.contacto_telefono
+                      ? formatWhatsappHref(refugio.contacto_telefono)
+                      : null;
+                    const estadoNombre =
+                      estados.find((estado) => Number(estado.id) === refugio.estado_id)
+                        ?.nombre ?? null;
+
+                    return (
+                      <article key={refugio.id} className="px-4 py-3">
+                        <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <h2 className="text-sm font-bold text-zinc-900">
+                                {refugio.nombre}
+                              </h2>
+                              <span
+                                className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                                  refugio.confirmado
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {refugio.confirmado ? "Confirmado" : "Pendiente"}
+                              </span>
+                              <span
+                                className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                                  refugio.activo
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-zinc-200 text-zinc-700"
+                                }`}
+                              >
+                                {refugio.activo ? "Activo" : "Inactivo"}
+                              </span>
+                              {refugio.saturado ? (
+                                <span className="inline-flex rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-red-700">
+                                  Saturado
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-0.5 text-xs text-zinc-500">
+                              {refugio.zona || "Sin zona"}
+                              {refugio.municipio ? ` · ${refugio.municipio}` : ""}
+                              {estadoNombre ? ` · ${estadoNombre}` : ""}
+                            </p>
+                            <p className="mt-1 text-xs text-zinc-600">
+                              {refugio.direccion ||
+                                refugio.referencia_lugar ||
+                                "Sin dirección específica"}
+                            </p>
+                            {refugio.necesidades ? (
+                              <p className="mt-1 text-xs text-zinc-700">
+                                Necesidades: {refugio.necesidades}
+                              </p>
+                            ) : null}
+                            {refugio.num_personas != null ? (
+                              <p className="mt-1 text-xs text-zinc-500">
+                                {refugio.num_personas} personas alojadas
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex shrink-0 flex-wrap gap-1.5">
+                            {whatsappHref ? (
+                              <a
+                                href={whatsappHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded border border-emerald-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800"
+                              >
+                                WhatsApp
+                              </a>
+                            ) : null}
+                            {refugio.google_maps_url ? (
+                              <a
+                                href={refugio.google_maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded border border-blue-300 bg-white px-2 py-1 text-[11px] font-bold text-blue-800"
+                              >
+                                Ver mapa
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </section>
         </SnackbarShell>

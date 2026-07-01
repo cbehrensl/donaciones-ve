@@ -41,12 +41,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <HomeClient
         contactosEmergencia={contactosEmergencia}
         errors={errors}
-        donationsSlot={<DonationLinksGrid />}
+        donationsSlot={
+          <DonationLinksGrid
+            ctaLabel="Aportar ahora"
+            emptyMessage="Por ahora no hay organizaciones verificadas para donar. Revisa de nuevo en unos minutos."
+          />
+        }
         psychologicalSupportSlot={
           <DonationLinksGrid
             category="psychological"
-            emptyMessage="No hay plataformas de ayuda psicológica verificadas por ahora."
-            ctaLabel="Ver apoyo"
+            emptyMessage="Por ahora no hay plataformas de apoyo emocional verificadas. Revisa de nuevo en unos minutos."
+            ctaLabel="Pedir apoyo"
           />
         }
       />
