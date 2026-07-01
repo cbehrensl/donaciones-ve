@@ -1,6 +1,7 @@
 "use server";
 
 import { requireSupabaseServiceClient, createSupabaseClient } from "@/lib/supabase";
+import { normalizeWhatsappNumber } from "@/lib/contact-links";
 import type { DonationLink, DonationLinkCategory } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { isModeratorTokenValid } from "@/lib/moderacion-auth";
@@ -29,9 +30,9 @@ function normalizeWhatsappPhone(value: FormDataEntryValue | null): string | null
   const raw = String(value ?? "").trim();
   if (!raw) return null;
 
-  const normalized = raw.replace(/[^\d+]/g, "");
+  const normalized = normalizeWhatsappNumber(raw);
   if (!normalized) return null;
-  return normalized.startsWith("+") ? normalized : `+${normalized}`;
+  return `+${normalized}`;
 }
 
 function assertModeratorToken(token: string): void {

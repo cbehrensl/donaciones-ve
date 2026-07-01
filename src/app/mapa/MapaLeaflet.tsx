@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useEffect, useRef, useState } from 'react';
+import { formatWhatsappHref } from '@/lib/contact-links';
 import type { CentroConCoordenadas, DonationConCoordenadas, RefugioConCoordenadas } from '@/lib/types';
 
 // Workaround para el bug de iconos Leaflet con webpack/Next.js
@@ -204,7 +205,7 @@ export default function MapaLeaflet({
         const href =
           don.url ??
           (don.whatsapp_phone
-            ? `https://wa.me/${don.whatsapp_phone.replace(/[^\d]/g, "")}`
+            ? formatWhatsappHref(don.whatsapp_phone)
             : "#")
 
         return (
@@ -305,7 +306,9 @@ export default function MapaLeaflet({
 
                 {centro.contacto && (
                   <a
-                    href={`tel:${centro.contacto.replace(/[^\d+]/g, '')}`}
+                    href={formatWhatsappHref(centro.contacto)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -388,7 +391,9 @@ export default function MapaLeaflet({
               )}
               {refugio.contacto_telefono && (
                 <a
-                  href={`tel:${refugio.contacto_telefono.replace(/[^\d+]/g, '')}`}
+                  href={formatWhatsappHref(refugio.contacto_telefono)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',

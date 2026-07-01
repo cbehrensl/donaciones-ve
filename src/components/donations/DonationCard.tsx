@@ -1,5 +1,6 @@
 "use client";
 
+import { formatWhatsappHref } from "@/lib/contact-links";
 import type { DonationLink } from "@/lib/types";
 
 function getDomain(url: string): string {
@@ -8,10 +9,6 @@ function getDomain(url: string): string {
   } catch {
     return "";
   }
-}
-
-function whatsappHref(phone: string): string {
-  return `https://wa.me/${phone.replace(/[^\d]/g, "")}`;
 }
 
 function getFallbackEmoji(category: DonationLink["category"]): string {
@@ -24,7 +21,7 @@ interface DonationCardProps {
 }
 
 export function DonationCard({ link, ctaLabel = "Donar" }: DonationCardProps) {
-  const href = link.url ?? (link.whatsapp_phone ? whatsappHref(link.whatsapp_phone) : "#");
+  const href = link.url ?? (link.whatsapp_phone ? formatWhatsappHref(link.whatsapp_phone) : "#");
   const domain = link.url ? getDomain(link.url) : "";
   const imageUrl =
     link.image_url ||

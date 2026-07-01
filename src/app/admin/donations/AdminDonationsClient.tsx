@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatWhatsappHref } from "@/lib/contact-links";
 import type { DonationLink, DonationLinkCategory } from "@/lib/types";
 
 const LINK_CATEGORIES: {
@@ -371,7 +372,7 @@ export function AdminDonationsClient({
                     </a>
                   ) : link.whatsapp_phone ? (
                     <a
-                      href={`https://wa.me/${link.whatsapp_phone.replace(/[^\d]/g, "")}`}
+                      href={formatWhatsappHref(link.whatsapp_phone)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-sm font-bold text-emerald-700 transition hover:text-emerald-900"

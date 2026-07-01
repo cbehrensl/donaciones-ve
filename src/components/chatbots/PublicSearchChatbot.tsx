@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getActionMessage } from "@/lib/action-feedback";
+import { formatWhatsappHref } from "@/lib/contact-links";
 
 interface ResultCentro {
   id: string;
@@ -262,10 +263,12 @@ export function PublicSearchChatbot() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       {centro.contacto ? (
                         <a
-                          href={`tel:${centro.contacto.replace(/[^\d+]/g, "")}`}
+                          href={formatWhatsappHref(centro.contacto)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="rounded border border-zinc-300 px-2 py-1 text-xs font-bold text-zinc-700"
                         >
-                          Llamar
+                          WhatsApp
                         </a>
                       ) : null}
                       {centro.ubicacion_url ? (

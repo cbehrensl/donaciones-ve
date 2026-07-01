@@ -1,5 +1,6 @@
 import { CopyTextButton } from "@/components/CopyTextButton";
 import { calcularSemaforoDesdeAlertas } from "@/lib/alertas";
+import { formatWhatsappHref } from "@/lib/contact-links";
 import { formatCentroPlainText } from "@/lib/data";
 import {
   SEMAFORO_DOT,
@@ -106,7 +107,14 @@ export function CentroCard({ centro, alertasActivas = [] }: CentroCardProps) {
             <span aria-hidden className="text-lg">📞</span>
             <div className="flex flex-col">
               <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Contacto</span>
-              <span className="font-bold leading-snug text-zinc-900">{centro.contacto}</span>
+              <a
+                href={formatWhatsappHref(centro.contacto)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold leading-snug text-emerald-700 hover:text-emerald-900"
+              >
+                WhatsApp {centro.contacto}
+              </a>
             </div>
           </div>
         )}

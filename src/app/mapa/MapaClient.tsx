@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { formatWhatsappHref } from '@/lib/contact-links'
 import { haversineDistancia } from '@/lib/distancia'
 import type { CentroConCoordenadas, DonationConCoordenadas, RefugioConCoordenadas } from '@/lib/types'
 
@@ -156,7 +157,7 @@ export default function MapaClient({ centros, donaciones, refugios }: MapaClient
     const href =
       don.url ??
       (don.whatsapp_phone
-        ? `https://wa.me/${don.whatsapp_phone.replace(/[^\d]/g, "")}`
+        ? formatWhatsappHref(don.whatsapp_phone)
         : "#");
 
     return (

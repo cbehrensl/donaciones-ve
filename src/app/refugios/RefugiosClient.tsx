@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatWhatsappHref } from "@/lib/contact-links";
 import type { Refugio } from "@/lib/types";
 
 interface RefugiosClientProps {
@@ -148,8 +149,8 @@ export function RefugiosClient({ refugios }: RefugiosClientProps) {
 function RefugioCard({ refugio }: { refugio: Refugio }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const telefonoHref = refugio.contacto_telefono
-    ? `tel:${refugio.contacto_telefono.replace(/[^\d+]/g, "")}`
+  const whatsappHref = refugio.contacto_telefono
+    ? formatWhatsappHref(refugio.contacto_telefono)
     : null;
 
   return (
@@ -209,15 +210,17 @@ function RefugioCard({ refugio }: { refugio: Refugio }) {
             Mapa
           </a>
         )}
-        {telefonoHref && (
+        {whatsappHref && (
           <a
-            href={telefonoHref}
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-purple-700"
           >
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
             </svg>
-            {refugio.contacto_telefono}
+            WhatsApp {refugio.contacto_telefono}
           </a>
         )}
         {refugio.contacto_nombre && (
