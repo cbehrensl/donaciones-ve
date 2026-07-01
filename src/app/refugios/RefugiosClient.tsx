@@ -151,7 +151,7 @@ function RefugioCard({ refugio }: { refugio: Refugio }) {
     : null;
 
   return (
-    <article className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 transition hover:border-zinc-200 hover:bg-white">
+    <article className="min-w-0 rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 transition hover:border-zinc-200 hover:bg-white">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold leading-tight text-zinc-900">
