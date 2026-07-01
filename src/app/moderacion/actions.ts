@@ -12,6 +12,10 @@ import {
   registrarAlertaCentro,
 } from "@/lib/moderacion-updates";
 import { isModeratorTokenValid } from "@/lib/moderacion-auth";
+import {
+  isMissingRefugiosColumnError,
+  omitMissingRefugiosColumn,
+} from "@/lib/refugios-db-compat";
 import { requireSupabaseServiceClient } from "@/lib/supabase";
 import type { Urgencia } from "@/lib/types";
 
@@ -420,4 +424,197 @@ export async function mostrarCentro(formData: FormData): Promise<ActionResult> {
   revalidatePath("/");
   revalidatePath("/moderacion");
   return actionSuccess("centro-visible");
+}
+
+function parseOptionalNumber(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+async function updateRefugioWithCompat(
+  refugioId: string,
+  payload: Record<string, unknown>,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = requireSupabaseServiceClient();
+  let current = { ...payload };
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const { error } = await supabase
+      .from("refugios")
+      .update(current)
+      .eq("id", refugioId);
+
+    if (!error) {
+      return { ok: true };
+    }
+
+    if (!isMissingRefugiosColumnError(error)) {
+      return { ok: false, error: error.message };
+    }
+
+    const next = omitMissingRefugiosColumn(current, error);
+    if (next === current) {
+      return { ok: false, error: error.message };
+    }
+    current = next;
+  }
+
+  return { ok: false, error: "No se pudo actualizar el refugio." };
+}
+
+function revalidateRefugioPaths(refugioId: string) {
+  revalidatePath("/");
+  revalidatePath("/refugios");
+  revalidatePath("/moderacion");
+  revalidatePath("/mapa");
+  revalidatePath(`/refugios/gestion/${refugioId}`);
+}
+
+export async function actualizarConfirmacionRefugioModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const refugioId = String(formData.get("refugioId") ?? "");
+  const confirmado = formData.get("confirmado") === "true";
+
+  if (!refugioId) {
+    return actionError("datos-invalidos");
+  }
+
+  const result = await updateRefugioWithCompat(refugioId, { confirmado });
+  if (!result.ok) {
+    console.error("Error actualizando confirmación de refugio:", result.error);
+    return actionError("error-guardar");
+  }
+
+  revalidateRefugioPaths(refugioId);
+  return actionSuccess(confirmado ? "refugio-confirmado" : "refugio-pendiente");
+}
+
+export async function ocultarRefugioModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const refugioId = String(formData.get("refugioId") ?? "");
+  if (!refugioId) {
+    return actionError("datos-invalidos");
+  }
+
+  const result = await updateRefugioWithCompat(refugioId, { activo: false });
+  if (!result.ok) {
+    console.error("Error ocultando refugio:", result.error);
+    return actionError("error-guardar");
+  }
+
+  revalidateRefugioPaths(refugioId);
+  return actionSuccess("refugio-oculto");
+}
+
+export async function activarRefugioModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const refugioId = String(formData.get("refugioId") ?? "");
+  if (!refugioId) {
+    return actionError("datos-invalidos");
+  }
+
+  const result = await updateRefugioWithCompat(refugioId, { activo: true });
+  if (!result.ok) {
+    console.error("Error activando refugio:", result.error);
+    return actionError("error-guardar");
+  }
+
+  revalidateRefugioPaths(refugioId);
+  return actionSuccess("refugio-activo");
+}
+
+export async function actualizarSaturacionRefugioModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const refugioId = String(formData.get("refugioId") ?? "");
+  const saturado = formData.get("saturado") === "true";
+
+  if (!refugioId) {
+    return actionError("datos-invalidos");
+  }
+
+  const result = await updateRefugioWithCompat(refugioId, { saturado });
+  if (!result.ok) {
+    console.error("Error actualizando saturación de refugio:", result.error);
+    return actionError("error-guardar");
+  }
+
+  revalidateRefugioPaths(refugioId);
+  return actionSuccess(saturado ? "refugio-saturado" : "refugio-capacidad");
+}
+
+export async function actualizarDetallesRefugioModeracion(
+  formData: FormData,
+): Promise<ActionResult> {
+  if (!isAuthorized(formData)) {
+    return actionError("no-autorizado");
+  }
+
+  const refugioId = String(formData.get("refugioId") ?? "");
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const googleMapsUrl = parseOptionalUrl(formData.get("google_maps_url"));
+
+  if (!refugioId || !nombre) {
+    return actionError("datos-invalidos");
+  }
+
+  const payload: Record<string, unknown> = {
+    nombre,
+    direccion: String(formData.get("direccion") ?? "").trim() || null,
+    referencia_lugar:
+      String(formData.get("referencia_lugar") ?? "").trim() || null,
+    zona: String(formData.get("zona") ?? "").trim() || null,
+    municipio: String(formData.get("municipio") ?? "").trim() || null,
+    contacto_nombre:
+      String(formData.get("contacto_nombre") ?? "").trim() || null,
+    contacto_telefono:
+      String(formData.get("contacto_telefono") ?? "").trim() || null,
+    necesidades: String(formData.get("necesidades") ?? "").trim() || null,
+    num_personas: parseOptionalNumber(formData.get("num_personas")),
+    google_maps_url: googleMapsUrl,
+    tiene_maps_link: Boolean(googleMapsUrl),
+    responsable_nombre:
+      String(formData.get("responsable_nombre") ?? "").trim() || null,
+    responsable_telefono:
+      String(formData.get("responsable_telefono") ?? "").trim() || null,
+  };
+
+  const estadoIdRaw = String(formData.get("estado_id") ?? "").trim();
+  if (estadoIdRaw) {
+    const estadoId = Number(estadoIdRaw);
+    if (Number.isFinite(estadoId)) {
+      payload.estado_id = estadoId;
+    }
+  }
+
+  const result = await updateRefugioWithCompat(refugioId, payload);
+  if (!result.ok) {
+    console.error("Error actualizando refugio desde moderación:", result.error);
+    return actionError("error-guardar");
+  }
+
+  revalidateRefugioPaths(refugioId);
+  return actionSuccess("refugio-actualizado");
 }

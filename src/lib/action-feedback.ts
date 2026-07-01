@@ -55,6 +55,34 @@ export const ACTION_MESSAGES: Record<string, ActionFeedbackMessage> = {
     tone: "success",
     text: "Los datos del centro se actualizaron correctamente.",
   },
+  "refugio-confirmado": {
+    tone: "success",
+    text: "El refugio quedó confirmado y visible como verificado.",
+  },
+  "refugio-pendiente": {
+    tone: "success",
+    text: "El refugio volvió al estado pendiente de confirmación.",
+  },
+  "refugio-oculto": {
+    tone: "success",
+    text: "El refugio se ocultó de la vista pública.",
+  },
+  "refugio-activo": {
+    tone: "success",
+    text: "El refugio volvió a mostrarse en la plataforma.",
+  },
+  "refugio-saturado": {
+    tone: "success",
+    text: "El refugio se marcó como saturado.",
+  },
+  "refugio-capacidad": {
+    tone: "success",
+    text: "El refugio volvió a mostrar capacidad disponible.",
+  },
+  "refugio-actualizado": {
+    tone: "success",
+    text: "Los datos del refugio se actualizaron correctamente.",
+  },
   "fechas-invalidas": {
     tone: "error",
     text: "La fecha fin no puede ser anterior a la fecha inicio.",

@@ -33,11 +33,13 @@ interface ModeracionFilterBarProps {
   resultsCount: number;
   resultsLabel: string;
   page: number;
+  totalCount: number | null;
+  hasNextPage: boolean;
+  activeFilterSummary?: string;
   clearHref: string;
   prevHref: string;
   nextHref: string;
   hasPrevPage: boolean;
-  hasNextPage: boolean;
 }
 
 export function ModeracionFilterBar({
@@ -59,14 +61,21 @@ export function ModeracionFilterBar({
   resultsCount,
   resultsLabel,
   page,
+  totalCount,
+  hasNextPage,
+  activeFilterSummary,
   clearHref,
   prevHref,
   nextHref,
   hasPrevPage,
-  hasNextPage,
 }: ModeracionFilterBarProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const isCentros = tab === "centros";
+
+  const countLabel =
+    totalCount != null
+      ? `${resultsCount} de ${totalCount} ${resultsLabel}`
+      : `${resultsCount} en esta página`;
 
   return (
     <form
@@ -87,13 +96,13 @@ export function ModeracionFilterBar({
               ? "Buscar nombre, dirección, responsable..."
               : "Buscar nombre, zona, contacto, necesidades..."
           }
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+          className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
         />
 
         <button
           type="button"
           onClick={() => setFiltersOpen((open) => !open)}
-          className="rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2.5 text-left text-sm font-bold text-zinc-700 sm:hidden"
+          className="min-h-11 rounded-lg border border-zinc-300 bg-zinc-50 px-3 text-left text-sm font-bold text-zinc-700 sm:hidden"
           aria-expanded={filtersOpen}
         >
           {filtersOpen ? "Ocultar filtros" : "Mostrar filtros"}
@@ -109,7 +118,7 @@ export function ModeracionFilterBar({
           <select
             name="estado"
             defaultValue={defaultEstado}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+            className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
           >
             <option value="">Todos los estados</option>
             {estados.map((estado) => (
@@ -124,7 +133,7 @@ export function ModeracionFilterBar({
               <select
                 name="estatus"
                 defaultValue={defaultEstatus}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+                className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
               >
                 {estatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -135,7 +144,7 @@ export function ModeracionFilterBar({
               <select
                 name="verificacion"
                 defaultValue={defaultVerificacion}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+                className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
               >
                 {verificacionOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -149,7 +158,7 @@ export function ModeracionFilterBar({
               <select
                 name="actividad"
                 defaultValue={defaultActividad}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+                className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
               >
                 {actividadOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -160,7 +169,7 @@ export function ModeracionFilterBar({
               <select
                 name="confirmacion"
                 defaultValue={defaultConfirmacion}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+                className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
               >
                 {confirmacionOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -171,7 +180,7 @@ export function ModeracionFilterBar({
               <select
                 name="saturacion"
                 defaultValue={defaultSaturacion}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+                className="min-h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm"
               >
                 {saturacionOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -184,48 +193,53 @@ export function ModeracionFilterBar({
 
           <button
             type="submit"
-            className="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-900"
+            className="min-h-11 rounded-lg bg-blue-800 px-4 text-sm font-bold text-white shadow-sm hover:bg-blue-900"
           >
             Filtrar
           </button>
         </div>
       </div>
 
+      {activeFilterSummary ? (
+        <p className="mt-2 text-xs text-zinc-600">{activeFilterSummary}</p>
+      ) : null}
+
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span>
-            <strong className="text-zinc-700">{resultsCount}</strong> {resultsLabel} · pág.{" "}
+            <strong className="text-zinc-700">{countLabel}</strong> · pág.{" "}
             <strong className="text-zinc-700">{page}</strong>
+            {hasNextPage ? " · hay más resultados" : ""}
           </span>
           <Link
             href={clearHref}
-            className="font-semibold text-blue-700 transition hover:text-blue-900"
+            className="min-h-11 inline-flex items-center font-semibold text-blue-700"
           >
             Limpiar
           </Link>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Link
             href={prevHref}
             aria-disabled={!hasPrevPage}
-            className={`rounded-md border px-2.5 py-1 text-xs font-bold ${
+            className={`inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-bold ${
               hasPrevPage
-                ? "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                ? "border-zinc-300 bg-white text-zinc-700"
                 : "pointer-events-none border-zinc-100 text-zinc-300"
             }`}
           >
-            ←
+            Anterior
           </Link>
           <Link
             href={nextHref}
             aria-disabled={!hasNextPage}
-            className={`rounded-md border px-2.5 py-1 text-xs font-bold ${
+            className={`inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-bold ${
               hasNextPage
-                ? "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                ? "border-zinc-300 bg-white text-zinc-700"
                 : "pointer-events-none border-zinc-100 text-zinc-300"
             }`}
           >
-            →
+            Siguiente
           </Link>
         </div>
       </div>

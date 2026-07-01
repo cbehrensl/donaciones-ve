@@ -762,6 +762,7 @@ export async function getCentrosParaModeracion(
         categorias_insumo ( id, nombre )
       )
     `,
+      { count: "exact" },
     );
 
   if (filters.estatus !== "todos") {
@@ -786,16 +787,22 @@ export async function getCentrosParaModeracion(
     );
   }
 
-  const { data, error } = await query
+  const { data, error, count } = await query
     .order("verificado", { ascending: true })
     .order("updated_at", { ascending: false })
-    .range(from, to);
+    .range(from, from + pageSize);
 
   if (error) {
     console.error("Error cargando centros para moderación:", error.message);
     return {
       centros: [],
-      meta: { page, pageSize, hasNextPage: false, hasPrevPage: page > 0 },
+      meta: {
+        page,
+        pageSize,
+        hasNextPage: false,
+        hasPrevPage: page > 0,
+        totalCount: null,
+      },
     };
   }
 
@@ -806,7 +813,13 @@ export async function getCentrosParaModeracion(
     centros: rows
       .slice(0, pageSize)
       .map((row) => normalizeCentro(row as Record<string, unknown>)),
-    meta: { page, pageSize, hasNextPage, hasPrevPage: page > 0 },
+    meta: {
+      page,
+      pageSize,
+      hasNextPage,
+      hasPrevPage: page > 0,
+      totalCount: count ?? null,
+    },
   };
 }
 
@@ -968,17 +981,17 @@ export async function getRefugiosParaModeracion(
 
   let query = supabase
     .from("refugios")
-    .select(REFUGIOS_MODERACION_SELECT_FULL)
+    .select(REFUGIOS_MODERACION_SELECT_FULL, { count: "exact" })
     .order("confirmado", { ascending: true })
     .order("updated_at", { ascending: false })
-    .range(from, to);
+    .range(from, from + pageSize);
 
   query = applyRefugiosModeracionFilters(query, filters, searchTerm, {
     includeSaturado,
     includeResponsable,
   });
 
-  let { data, error } = await query;
+  let { data, error, count } = await query;
   let rowsData: Record<string, unknown>[] | null = data as Record<string, unknown>[] | null;
 
   if (error && isMissingRefugiosColumnError(error)) {
@@ -987,10 +1000,10 @@ export async function getRefugiosParaModeracion(
 
     let legacyQuery = supabase
       .from("refugios")
-      .select(REFUGIOS_MODERACION_SELECT_LEGACY)
+      .select(REFUGIOS_MODERACION_SELECT_LEGACY, { count: "exact" })
       .order("confirmado", { ascending: true })
       .order("updated_at", { ascending: false })
-      .range(from, to);
+      .range(from, from + pageSize);
 
     legacyQuery = applyRefugiosModeracionFilters(
       legacyQuery,
@@ -1002,13 +1015,20 @@ export async function getRefugiosParaModeracion(
     const legacyResult = await legacyQuery;
     rowsData = legacyResult.data as Record<string, unknown>[] | null;
     error = legacyResult.error;
+    count = legacyResult.count;
   }
 
   if (error) {
     console.error("Error cargando refugios para moderación:", error.message);
     return {
       refugios: [],
-      meta: { page, pageSize, hasNextPage: false, hasPrevPage: page > 0 },
+      meta: {
+        page,
+        pageSize,
+        hasNextPage: false,
+        hasPrevPage: page > 0,
+        totalCount: null,
+      },
     };
   }
 
@@ -1030,7 +1050,13 @@ export async function getRefugiosParaModeracion(
 
   return {
     refugios,
-    meta: { page, pageSize, hasNextPage, hasPrevPage: page > 0 },
+    meta: {
+      page,
+      pageSize,
+      hasNextPage,
+      hasPrevPage: page > 0,
+      totalCount: count ?? null,
+    },
   };
 }
 

@@ -6,6 +6,7 @@ import type { ModeratorProposal } from "@/lib/ai/schemas";
 
 interface ModeradorChatbotProps {
   token: string;
+  embedded?: boolean;
 }
 
 interface ChatMessage {
@@ -13,7 +14,7 @@ interface ChatMessage {
   text: string;
 }
 
-export function ModeradorChatbot({ token }: ModeradorChatbotProps) {
+export function ModeradorChatbot({ token, embedded = false }: ModeradorChatbotProps) {
   const showSnackbar = useSnackbar();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -76,16 +77,26 @@ export function ModeradorChatbot({ token }: ModeradorChatbotProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-      <h2 className="text-sm font-black uppercase tracking-wide text-blue-900">
-        Asistente de actualización rápida
-      </h2>
-      <p className="mt-1 text-xs text-blue-900/80">
-        Escribe cambios en lenguaje natural. El asistente siempre mostrará una
-        propuesta antes de aplicar cambios.
-      </p>
+    <section
+      className={
+        embedded
+          ? ""
+          : "rounded-2xl border border-blue-200 bg-blue-50 p-4"
+      }
+    >
+      {!embedded ? (
+        <>
+          <h2 className="text-sm font-black uppercase tracking-wide text-blue-900">
+            Asistente de actualización rápida
+          </h2>
+          <p className="mt-1 text-xs text-blue-900/80">
+            Escribe cambios en lenguaje natural. El asistente siempre mostrará una
+            propuesta antes de aplicar cambios.
+          </p>
+        </>
+      ) : null}
 
-      <div className="mt-3 max-h-56 space-y-2 overflow-y-auto rounded-lg bg-white p-3">
+      <div className={`${embedded ? "" : "mt-3"} max-h-56 space-y-2 overflow-y-auto rounded-lg bg-white p-3`}>
         {messages.length === 0 ? (
           <p className="text-xs text-zinc-500">
             Ejemplo: &quot;La Iglesia San José en Chacao necesita agua urgente&quot;.

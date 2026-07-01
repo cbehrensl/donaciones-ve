@@ -137,6 +137,7 @@ export interface ModeracionSearchMeta {
   pageSize: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  totalCount: number | null;
 }
 
 export type ModeracionTab = "centros" | "refugios";
