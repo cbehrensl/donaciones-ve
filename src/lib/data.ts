@@ -1209,13 +1209,14 @@ export async function getRefugioByManagementCode(
   const supabase = requireSupabaseServiceClient();
   const codigoHash = hashManagementCode(code);
 
-  let { data, error } = await supabase
+  let { data: fullData, error } = await supabase
     .from("refugios")
     .select(
       "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, saturado, codigo_gestion_hash, responsable_nombre, responsable_telefono, created_at, updated_at",
     )
     .eq("codigo_gestion_hash", codigoHash)
     .maybeSingle();
+  let data = fullData as Record<string, unknown> | null;
   let includeSaturado = true;
 
   if (error && isMissingRefugiosColumnError(error)) {
@@ -1227,7 +1228,7 @@ export async function getRefugioByManagementCode(
       )
       .eq("codigo_gestion_hash", codigoHash)
       .maybeSingle();
-    data = legacyResult.data;
+    data = legacyResult.data as Record<string, unknown> | null;
     error = legacyResult.error;
   }
 
@@ -1323,7 +1324,7 @@ export async function getRefugioForManagement(
   const supabase = requireSupabaseServiceClient();
   const codigoHash = hashManagementCode(code);
 
-  let { data, error } = await supabase
+  let { data: fullData, error } = await supabase
     .from("refugios")
     .select(
       "id, nombre, direccion, referencia_lugar, zona, municipio, estado_id, contacto_nombre, contacto_telefono, num_personas, necesidades, confirmado, tiene_maps_link, google_maps_url, activo, saturado, codigo_gestion_hash, responsable_nombre, responsable_telefono, created_at, updated_at",
@@ -1331,6 +1332,7 @@ export async function getRefugioForManagement(
     .eq("id", refugioId)
     .eq("codigo_gestion_hash", codigoHash)
     .maybeSingle();
+  let data = fullData as Record<string, unknown> | null;
   let includeSaturado = true;
 
   if (error && isMissingRefugiosColumnError(error)) {
@@ -1343,7 +1345,7 @@ export async function getRefugioForManagement(
       .eq("id", refugioId)
       .eq("codigo_gestion_hash", codigoHash)
       .maybeSingle();
-    data = legacyResult.data;
+    data = legacyResult.data as Record<string, unknown> | null;
     error = legacyResult.error;
   }
 
@@ -1592,7 +1594,8 @@ export async function getRefugios(
     }
   }
 
-  let { data, error } = await query;
+  let { data: fullData, error } = await query;
+  let data = fullData as Record<string, unknown>[] | null;
   let includeSaturado = true;
 
   if (error && isMissingRefugiosColumnError(error)) {
@@ -1620,7 +1623,7 @@ export async function getRefugios(
     }
 
     const legacyResult = await legacyQuery;
-    data = legacyResult.data;
+    data = legacyResult.data as Record<string, unknown>[] | null;
     error = legacyResult.error;
   }
 

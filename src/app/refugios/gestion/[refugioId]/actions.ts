@@ -14,7 +14,6 @@ import { requireSupabaseServiceClient } from "@/lib/supabase";
 import { hashManagementCode } from "@/lib/gestion-code";
 
 export async function actualizarDetallesRefugio(
-  _prevState: unknown,
   formData: FormData,
 ): Promise<ActionResult> {
   try {

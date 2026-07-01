@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { getActionMessage } from "@/lib/action-feedback";
 import { registrarRefugioPublico } from "./actions";
 import type { Estado } from "@/lib/types";
 
@@ -92,7 +93,7 @@ export function NuevoRefugioForm({
 
       {result && !result.ok ? (
         <section className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
-          {result.message}
+          {getActionMessage(result.code)?.text}
         </section>
       ) : null}
 
