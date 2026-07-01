@@ -146,6 +146,8 @@ export function RefugiosClient({ refugios }: RefugiosClientProps) {
 }
 
 function RefugioCard({ refugio }: { refugio: Refugio }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const telefonoHref = refugio.contacto_telefono
     ? `tel:${refugio.contacto_telefono.replace(/[^\d+]/g, "")}`
     : null;
@@ -158,9 +160,17 @@ function RefugioCard({ refugio }: { refugio: Refugio }) {
             {refugio.nombre}
           </h3>
           {(refugio.direccion || refugio.referencia_lugar) && (
-            <p className="mt-0.5 text-xs text-zinc-500 truncate">
-              {refugio.direccion || refugio.referencia_lugar}
-            </p>
+            <div 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="mt-0.5 cursor-pointer group"
+              title={isExpanded ? "Mostrar menos" : "Mostrar dirección completa"}
+            >
+              <p className={`text-xs text-zinc-500 transition-colors group-hover:text-zinc-800 ${
+                isExpanded ? "break-words" : "truncate"
+              }`}>
+                {refugio.direccion || refugio.referencia_lugar}
+              </p>
+            </div>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
